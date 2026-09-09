@@ -2,72 +2,125 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
-class StatusSaverApp extends StatefulWidget {
+import 'view.dart';
+
+class StatusSaverApp extends StatelessWidget {
   const StatusSaverApp({super.key});
 
   @override
-  State<StatusSaverApp> createState() => _StatusSaverAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Save Status',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.green,
+      ),
+      home: const StatusHomePage(),
+    );
+  }
 }
 
-class _StatusSaverAppState extends State<StatusSaverApp> {
-  static const MethodChannel _channel = MethodChannel(
+// ============================================================================
+// STATUS HOME PAGE
+// ============================================================================
+
+class StatusHomePage extends StatefulWidget {
+  const StatusHomePage({super.key});
+
+  @override
+  State<StatusHomePage> createState() =>
+      _StatusHomePageState();
+}
+
+class _StatusHomePageState
+    extends State<StatusHomePage> {
+  static const MethodChannel _channel =
+  MethodChannel(
     'com.example.status_saver/status',
   );
 
+  // ==========================================================================
+  // APP STATE
+  // ==========================================================================
+
+  bool _loading = true;
+
+  bool _whatsappInstalled = false;
+  bool _businessInstalled = false;
+
+  bool _whatsappConfigured = false;
+  bool _businessConfigured = false;
+
+  String? _lastSelectedSource;
+  String? _selectedSource;
+
+  // 0 = Statuses
+  // 1 = Saved
+  int _currentTab = 0;
+
+  String _statusFilter = 'all';
+  String _savedFilter = 'all';
+
   List<Map<String, dynamic>> _statuses = [];
 
-  bool _loading = false;
+  List<Map<String, dynamic>> _savedStatuses = [];
 
-  Future<void> _selectStatusFolder() async {
-    try {
-      final result = await _channel.invokeMethod<bool>(
-        'selectStatusFolder',
-      );
+  bool _loadingStatuses = false;
+  bool _loadingSaved = false;
 
-      if (result == true) {
-        await _loadStatuses();
-      }
-    } on PlatformException catch (e) {
-      debugPrint('Platform error: ${e.message}');
-    } catch (e) {
-      debugPrint('Error: $e');
-    }
+  final Map<String, Uint8List> _thumbnailCache = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadAppState();
+    _loadSavedStatuses();
   }
 
-  Future<void> _loadStatuses() async {
-    setState(() {
-      _loading = true;
-    });
+  // ==========================================================================
+  // LOAD APP STATE
+  // ==========================================================================
 
+  Future<void> _loadAppState() async {
     try {
-      final result = await _channel.invokeMethod<List<dynamic>>(
-        'getStatuses',
+      final result =
+      await _channel.invokeMethod(
+        'getAppState',
       );
 
-      final statuses = (result ?? [])
-          .map(
-            (item) => Map<String, dynamic>.from(
-          item as Map,
-        ),
-      )
-          .toList();
+      if (result == null) {
+        return;
+      }
+
+      final data =
+      Map<String, dynamic>.from(result);
 
       if (!mounted) return;
 
       setState(() {
-        _statuses = statuses;
+        _whatsappInstalled =
+            data['whatsappInstalled'] == true;
+
+        _businessInstalled =
+            data['businessInstalled'] == true;
+
+        _whatsappConfigured =
+            data['whatsappConfigured'] == true;
+
+        _businessConfigured =
+            data['businessConfigured'] == true;
+
+        _lastSelectedSource =
+        data['lastSelectedSource'];
       });
-    } on PlatformException catch (e) {
-      debugPrint(
-        'Platform error loading statuses: ${e.message}',
-      );
+
+      _selectInitialSource();
     } catch (e) {
       debugPrint(
-        'Error loading statuses: $e',
+        'Unable to load app state: $e',
       );
     } finally {
       if (mounted) {
@@ -78,83 +131,1059 @@ class _StatusSaverAppState extends State<StatusSaverApp> {
     }
   }
 
-  Future<Uint8List?> _readStatus(String uri) async {
-    try {
-      final result = await _channel.invokeMethod<Uint8List>(
-        'readStatus',
-        {
-          'uri': uri,
-        },
+  // ==========================================================================
+  // SELECT INITIAL SOURCE
+  // ==========================================================================
+
+  void _selectInitialSource() {
+    final installedSources =
+        _installedSources;
+
+    if (installedSources.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _selectedSource = null;
+        });
+      }
+
+      return;
+    }
+
+    if (_lastSelectedSource != null &&
+        installedSources.contains(
+          _lastSelectedSource,
+        ) &&
+        _isConfigured(
+          _lastSelectedSource!,
+        )) {
+      if (mounted) {
+        setState(() {
+          _selectedSource =
+              _lastSelectedSource;
+        });
+      }
+
+      _loadStatuses(
+        _lastSelectedSource!,
       );
 
-      return result;
-    } on PlatformException catch (e) {
-      debugPrint(
-        'Unable to read status: ${e.message}',
-      );
-      return null;
-    } catch (e) {
-      debugPrint(
-        'Error reading status: $e',
-      );
-      return null;
+      return;
+    }
+
+    for (final source
+    in installedSources) {
+      if (_isConfigured(source)) {
+        if (mounted) {
+          setState(() {
+            _selectedSource = source;
+          });
+        }
+
+        _loadStatuses(source);
+
+        return;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _selectedSource =
+            installedSources.first;
+      });
     }
   }
 
-  void _openStatus(
+  // ==========================================================================
+  // INSTALLED SOURCES
+  // ==========================================================================
+
+  List<String> get _installedSources {
+    final sources = <String>[];
+
+    if (_whatsappInstalled) {
+      sources.add('whatsapp');
+    }
+
+    if (_businessInstalled) {
+      sources.add('business');
+    }
+
+    return sources;
+  }
+
+  bool _isConfigured(
+      String source,
+      ) {
+    if (source == 'business') {
+      return _businessConfigured;
+    }
+
+    return _whatsappConfigured;
+  }
+
+  String _sourceName(
+      String source,
+      ) {
+    if (source == 'business') {
+      return 'WhatsApp Business';
+    }
+
+    return 'WhatsApp';
+  }
+
+  // ==========================================================================
+  // SETUP SOURCE
+  // ==========================================================================
+
+  Future<void> _setupSource(
+      String source,
+      ) async {
+    try {
+      final success =
+      await _channel.invokeMethod<bool>(
+        'selectStatusFolder',
+        {
+          'source': source,
+        },
+      );
+
+      if (success == true) {
+        await _loadAppState();
+
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${_sourceName(source)} status access is ready.',
+              ),
+              behavior:
+              SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Please select the .Statuses folder.',
+              ),
+              behavior:
+              SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Unable to set up status access: $e',
+            ),
+            behavior:
+            SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  // ==========================================================================
+  // LOAD DETECTED STATUSES
+  // ==========================================================================
+
+  Future<void> _loadStatuses(
+      String source,
+      ) async {
+    if (!_isConfigured(source)) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _loadingStatuses = true;
+      });
+    }
+
+    try {
+      final result =
+      await _channel.invokeMethod(
+        'getStatuses',
+        {
+          'source': source,
+        },
+      );
+
+      final statuses =
+      <Map<String, dynamic>>[];
+
+      if (result is List) {
+        for (final item in result) {
+          statuses.add(
+            Map<String, dynamic>.from(
+              item,
+            ),
+          );
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _statuses = statuses;
+      });
+    } catch (e) {
+      debugPrint(
+        'Unable to load statuses: $e',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingStatuses = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================================================
+  // LOAD SAVED STATUSES
+  // ==========================================================================
+
+  Future<void> _loadSavedStatuses() async {
+    if (mounted) {
+      setState(() {
+        _loadingSaved = true;
+      });
+    }
+
+    try {
+      final result =
+      await _channel.invokeMethod(
+        'getSavedStatuses',
+      );
+
+      final saved =
+      <Map<String, dynamic>>[];
+
+      if (result is List) {
+        for (final item in result) {
+          saved.add(
+            Map<String, dynamic>.from(
+              item,
+            ),
+          );
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _savedStatuses = saved;
+      });
+    } catch (e) {
+      debugPrint(
+        'Unable to load saved statuses: $e',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingSaved = false;
+        });
+      }
+    }
+  }
+
+  // ==========================================================================
+  // SELECT SOURCE
+  // ==========================================================================
+
+  Future<void> _selectSource(
+      String source,
+      ) async {
+    if (!_isConfigured(source)) {
+      await _setupSource(source);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _selectedSource = source;
+        _statusFilter = 'all';
+      });
+    }
+
+    try {
+      await _channel.invokeMethod(
+        'setLastSelectedSource',
+        {
+          'source': source,
+        },
+      );
+    } catch (e) {
+      debugPrint(
+        'Unable to save selected source: $e',
+      );
+    }
+
+    await _loadStatuses(source);
+  }
+
+  // ==========================================================================
+  // BOTTOM NAVIGATION
+  // ==========================================================================
+
+  void _changeTab(
+      int index,
+      ) {
+    if (!mounted) return;
+
+    setState(() {
+      _currentTab = index;
+    });
+
+    if (index == 0) {
+      if (_selectedSource != null &&
+          _isConfigured(
+            _selectedSource!,
+          )) {
+        _loadStatuses(
+          _selectedSource!,
+        );
+      }
+    } else {
+      _loadSavedStatuses();
+    }
+  }
+
+  // ==========================================================================
+  // FILTER
+  // ==========================================================================
+
+  List<Map<String, dynamic>>
+  _filterMedia(
+      List<Map<String, dynamic>> items,
+      String filter,
+      ) {
+    if (filter == 'all') {
+      return items;
+    }
+
+    return items.where((status) {
+      final mime =
+      (status['mimeType'] ?? '')
+          .toString()
+          .toLowerCase();
+
+      if (filter == 'photos') {
+        return mime.startsWith('image/');
+      }
+
+      if (filter == 'videos') {
+        return mime.startsWith('video/');
+      }
+
+      return true;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>>
+  get _filteredStatuses {
+    return _filterMedia(
+      _statuses,
+      _statusFilter,
+    );
+  }
+
+  List<Map<String, dynamic>>
+  get _filteredSavedStatuses {
+    return _filterMedia(
+      _savedStatuses,
+      _savedFilter,
+    );
+  }
+
+  // ==========================================================================
+  // VIDEO CHECK
+  // ==========================================================================
+
+  bool _isVideo(
       Map<String, dynamic> status,
       ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => StatusViewer(
-          status: status,
-          readStatus: _readStatus,
+    final mime =
+    (status['mimeType'] ?? '')
+        .toString()
+        .toLowerCase();
+
+    if (mime.startsWith('video/')) {
+      return true;
+    }
+
+    final name =
+    (status['name'] ?? '')
+        .toString()
+        .toLowerCase();
+
+    return name.endsWith('.mp4') ||
+        name.endsWith('.3gp') ||
+        name.endsWith('.mkv') ||
+        name.endsWith('.webm') ||
+        name.endsWith('.mov');
+  }
+
+  // ==========================================================================
+  // OPEN STATUS
+  // ==========================================================================
+
+  Future<void> _openStatus(
+      Map<String, dynamic> status,
+      ) async {
+    try {
+      final path =
+      await _channel.invokeMethod<String>(
+        'prepareStatus',
+        {
+          'uri': status['uri'],
+          'name': status['name'],
+        },
+      );
+
+      if (path == null ||
+          path.isEmpty) {
+        throw Exception(
+          'Unable to prepare status',
+        );
+      }
+
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => StatusView(
+            filePath: path,
+            status: status,
+            isVideo: _isVideo(status),
+          ),
+        ),
+      );
+
+      // Refresh saved media after returning.
+      await _loadSavedStatuses();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Unable to open status: $e',
+            ),
+            behavior:
+            SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  // ==========================================================================
+  // THUMBNAIL CACHE
+  // ==========================================================================
+
+  void _cacheThumbnail(
+      String uri,
+      Uint8List bytes,
+      ) {
+    if (_thumbnailCache.length >= 100) {
+      _thumbnailCache.remove(
+        _thumbnailCache.keys.first,
+      );
+    }
+
+    _thumbnailCache[uri] = bytes;
+  }
+
+  // ==========================================================================
+  // SETUP CONTENT
+  // ==========================================================================
+
+  Widget _buildSetupContent() {
+    final installed =
+        _installedSources;
+
+    return SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding:
+          const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints:
+            const BoxConstraints(
+              maxWidth: 500,
+            ),
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(
+                  height: 20,
+                ),
+
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration:
+                    BoxDecoration(
+                      color: Colors.green
+                          .withOpacity(0.12),
+                      shape:
+                      BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons
+                          .download_rounded,
+                      size: 36,
+                      color:
+                      Colors.green,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 24,
+                ),
+
+                const Text(
+                  'Save Status',
+                  textAlign:
+                  TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 12,
+                ),
+
+                const Text(
+                  'Save photos and videos from your WhatsApp statuses.',
+                  textAlign:
+                  TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color:
+                    Colors.black54,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 36,
+                ),
+
+                if (installed.isEmpty)
+                  _buildNoWhatsAppCard(),
+
+                for (final source
+                in installed)
+                  Padding(
+                    padding:
+                    const EdgeInsets
+                        .only(
+                      bottom: 14,
+                    ),
+                    child:
+                    _buildSetupCard(
+                      source,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusItem(
+  // ==========================================================================
+  // SETUP CARD
+  // ==========================================================================
+
+  Widget _buildSetupCard(
+      String source,
+      ) {
+    final configured =
+    _isConfigured(source);
+
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape:
+      RoundedRectangleBorder(
+        borderRadius:
+        BorderRadius.circular(18),
+        side: BorderSide(
+          color:
+          Colors.grey.shade300,
+        ),
+      ),
+      child: InkWell(
+        borderRadius:
+        BorderRadius.circular(18),
+        onTap: () {
+          if (configured) {
+            _selectSource(source);
+          } else {
+            _setupSource(source);
+          }
+        },
+        child: Padding(
+          padding:
+          const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration:
+                BoxDecoration(
+                  color: Colors.green
+                      .withOpacity(0.10),
+                  borderRadius:
+                  BorderRadius.circular(
+                    14,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.chat_rounded,
+                  color:
+                  Colors.green,
+                ),
+              ),
+
+              const SizedBox(
+                width: 14,
+              ),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+                  children: [
+                    Text(
+                      _sourceName(
+                        source,
+                      ),
+                      style:
+                      const TextStyle(
+                        fontSize: 17,
+                        fontWeight:
+                        FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      configured
+                          ? 'Status access is ready'
+                          : 'Set up status access',
+                      style: TextStyle(
+                        color: configured
+                            ? Colors.green
+                            : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Icon(
+                configured
+                    ? Icons
+                    .check_circle
+                    : Icons
+                    .chevron_right,
+                color: configured
+                    ? Colors.green
+                    : Colors.black45,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // NO WHATSAPP
+  // ==========================================================================
+
+  Widget _buildNoWhatsAppCard() {
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding:
+        const EdgeInsets.all(24),
+        child: Column(
+          children: const [
+            Icon(
+              Icons
+                  .chat_bubble_outline,
+              size: 48,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'WhatsApp not found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight:
+                FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Install WhatsApp or WhatsApp Business to use Status Saver.',
+              textAlign:
+              TextAlign.center,
+              style: TextStyle(
+                color:
+                Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // SOURCE SELECTOR
+  // ==========================================================================
+
+  Widget _buildSourceSelector() {
+    final source =
+        _selectedSource;
+
+    if (source == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (_installedSources.length ==
+        1) {
+      return Padding(
+        padding:
+        const EdgeInsets.only(
+          right: 12,
+        ),
+        child: Center(
+          child: Text(
+            _sourceName(source),
+            style:
+            const TextStyle(
+              fontSize: 16,
+              fontWeight:
+              FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding:
+      const EdgeInsets.only(
+        right: 8,
+      ),
+      child:
+      PopupMenuButton<String>(
+        onSelected:
+        _selectSource,
+        itemBuilder: (context) {
+          return _installedSources
+              .map(
+                (item) {
+              final configured =
+              _isConfigured(item);
+
+              final selected =
+                  item ==
+                      _selectedSource;
+
+              return PopupMenuItem<
+                  String>(
+                value: item,
+                child: Row(
+                  children: [
+                    Icon(
+                      configured
+                          ? Icons
+                          .chat_rounded
+                          : Icons
+                          .settings_outlined,
+                      size: 20,
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Expanded(
+                      child: Text(
+                        _sourceName(
+                          item,
+                        ),
+                      ),
+                    ),
+                    if (selected)
+                      const Icon(
+                        Icons.check,
+                        size: 20,
+                        color:
+                        Colors.green,
+                      ),
+                  ],
+                ),
+              );
+            },
+          ).toList();
+        },
+        child: Container(
+          padding:
+          const EdgeInsets
+              .symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          decoration:
+          BoxDecoration(
+            borderRadius:
+            BorderRadius.circular(
+              10,
+            ),
+            color:
+            Colors.grey.shade100,
+          ),
+          child: Row(
+            mainAxisSize:
+            MainAxisSize.min,
+            children: [
+              Text(
+                _sourceName(source),
+                style:
+                const TextStyle(
+                  fontWeight:
+                  FontWeight.w700,
+                ),
+              ),
+              const SizedBox(
+                width: 4,
+              ),
+              const Icon(
+                Icons
+                    .keyboard_arrow_down,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // FILTER BAR
+  // ==========================================================================
+
+  Widget _buildFilterBar({
+    required String selectedFilter,
+    required ValueChanged<String>
+    onChanged,
+  }) {
+    final filters = [
+      ('all', 'All'),
+      ('photos', 'Photos'),
+      ('videos', 'Videos'),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection:
+      Axis.horizontal,
+      padding:
+      const EdgeInsets.symmetric(
+        horizontal: 16,
+      ),
+      child: Row(
+        children: filters.map(
+              (item) {
+            final selected =
+                selectedFilter ==
+                    item.$1;
+
+            return Padding(
+              padding:
+              const EdgeInsets
+                  .only(
+                right: 8,
+              ),
+              child: ChoiceChip(
+                label:
+                Text(item.$2),
+                selected:
+                selected,
+                onSelected: (_) {
+                  onChanged(
+                    item.$1,
+                  );
+                },
+              ),
+            );
+          },
+        ).toList(),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // MEDIA GRID
+  // ==========================================================================
+
+  Widget _buildMediaGrid({
+    required List<
+        Map<String, dynamic>>
+    items,
+    required bool loading,
+    required Future<void>
+    Function() onRefresh,
+    required String emptyTitle,
+    required String emptyMessage,
+  }) {
+    if (loading) {
+      return const Center(
+        child:
+        CircularProgressIndicator(),
+      );
+    }
+
+    if (items.isEmpty) {
+      return _buildEmptyMediaState(
+        onRefresh: onRefresh,
+        title: emptyTitle,
+        message: emptyMessage,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: GridView.builder(
+        physics:
+        const AlwaysScrollableScrollPhysics(),
+        padding:
+        const EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          24,
+        ),
+        cacheExtent: 800,
+        gridDelegate:
+        const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.78,
+        ),
+        itemCount: items.length,
+        itemBuilder:
+            (context, index) {
+          final status =
+          items[index];
+
+          final uri =
+              status['uri']
+                  ?.toString() ??
+                  'status_$index';
+
+          return KeyedSubtree(
+            key: ValueKey(uri),
+            child:
+            _buildMediaTile(
+              status,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // MEDIA TILE
+  // ==========================================================================
+
+  Widget _buildMediaTile(
       Map<String, dynamic> status,
       ) {
-    final String name =
-        status['name'] ?? '';
+    final uri =
+        status['uri']
+            ?.toString() ??
+            '';
 
-    final String mimeType =
-        status['mimeType'] ?? '';
-
-    final bool isVideo =
-    mimeType.startsWith('video/');
+    final isVideo =
+    _isVideo(status);
 
     return GestureDetector(
-      onTap: () => _openStatus(status),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
+      onTap: () {
+        _openStatus(status);
+      },
+      child: ClipRRect(
+        borderRadius:
+        BorderRadius.circular(16),
         child: Stack(
           fit: StackFit.expand,
           children: [
-
-            Container(
-              color: Colors.black12,
-              child: Center(
-                child: Icon(
-                  isVideo
-                      ? Icons.play_circle_fill
-                      : Icons.image,
-                  size: 55,
-                ),
-              ),
+            StatusThumbnail(
+              status: status,
+              cachedBytes:
+              _thumbnailCache[uri],
+              onLoaded: (bytes) {
+                _cacheThumbnail(
+                  uri,
+                  bytes,
+                );
+              },
             ),
 
             if (isVideo)
-              const Positioned(
-                top: 8,
-                right: 8,
-                child: Icon(
-                  Icons.play_circle_fill,
-                  color: Colors.white,
-                  size: 28,
+              Center(
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration:
+                  BoxDecoration(
+                    color: Colors.black
+                        .withOpacity(
+                      0.55,
+                    ),
+                    shape:
+                    BoxShape.circle,
+                  ),
+                  child:
+                  const Icon(
+                    Icons.play_arrow,
+                    color:
+                    Colors.white,
+                    size: 30,
+                  ),
                 ),
               ),
 
@@ -163,14 +1192,42 @@ class _StatusSaverAppState extends State<StatusSaverApp> {
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.black54,
+                padding:
+                const EdgeInsets
+                    .fromLTRB(
+                  10,
+                  22,
+                  10,
+                  10,
+                ),
+                decoration:
+                const BoxDecoration(
+                  gradient:
+                  LinearGradient(
+                    begin:
+                    Alignment
+                        .topCenter,
+                    end:
+                    Alignment
+                        .bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black87,
+                    ],
+                  ),
+                ),
                 child: Text(
-                  name,
+                  status['name']
+                      ?.toString() ??
+                      'Status',
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  overflow:
+                  TextOverflow
+                      .ellipsis,
+                  style:
+                  const TextStyle(
+                    color:
+                    Colors.white,
                     fontSize: 12,
                   ),
                 ),
@@ -182,323 +1239,434 @@ class _StatusSaverAppState extends State<StatusSaverApp> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
+  // ==========================================================================
+  // EMPTY STATE
+  // ==========================================================================
 
-    _loadStatuses();
+  Widget _buildEmptyMediaState({
+    required Future<void>
+    Function() onRefresh,
+    required String title,
+    required String message,
+  }) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics:
+        const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height:
+            MediaQuery.of(context)
+                .size
+                .height *
+                0.28,
+          ),
+          Icon(
+            Icons
+                .photo_library_outlined,
+            size: 60,
+            color:
+            Colors.grey.shade400,
+          ),
+          const SizedBox(
+            height: 16,
+          ),
+          Text(
+            title,
+            textAlign:
+            TextAlign.center,
+            style:
+            const TextStyle(
+              fontSize: 19,
+              fontWeight:
+              FontWeight.w700,
+            ),
+          ),
+          const SizedBox(
+            height: 8,
+          ),
+          Padding(
+            padding:
+            const EdgeInsets
+                .symmetric(
+              horizontal: 40,
+            ),
+            child: Text(
+              message,
+              textAlign:
+              TextAlign.center,
+              style:
+              const TextStyle(
+                color:
+                Colors.black54,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Save Status',
-      debugShowCheckedModeBanner: false,
+  // ==========================================================================
+  // STATUSES TAB
+  // ==========================================================================
 
-      theme: ThemeData(
-        useMaterial3: true,
-      ),
+  Widget _buildStatusesTab() {
+    final source =
+        _selectedSource;
 
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Save Status',
-          ),
+    if (source == null ||
+        !_isConfigured(source)) {
+      return _buildSetupContent();
+    }
 
-          actions: [
-            IconButton(
-              onPressed: _loadStatuses,
-              icon: const Icon(
-                Icons.refresh,
-              ),
-            ),
-          ],
+    return Column(
+      children: [
+        const SizedBox(
+          height: 8,
         ),
 
-        body: _loading
+        _buildFilterBar(
+          selectedFilter:
+          _statusFilter,
+          onChanged: (value) {
+            setState(() {
+              _statusFilter =
+                  value;
+            });
+          },
+        ),
 
-            ? const Center(
-          child: CircularProgressIndicator(),
-        )
+        const SizedBox(
+          height: 4,
+        ),
 
-            : _statuses.isEmpty
+        Expanded(
+          child:
+          _buildMediaGrid(
+            items:
+            _filteredStatuses,
+            loading:
+            _loadingStatuses,
+            onRefresh: () {
+              if (_selectedSource ==
+                  null) {
+                return Future.value();
+              }
 
-            ? Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-
-              const Icon(
-                Icons.photo_library_outlined,
-                size: 70,
-              ),
-
-              const SizedBox(
-                height: 16,
-              ),
-
-              const Text(
-                'No statuses found',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              const SizedBox(
-                height: 8,
-              ),
-
-              const Text(
-                'Select your WhatsApp Status folder',
-              ),
-
-              const SizedBox(
-                height: 20,
-              ),
-
-              ElevatedButton.icon(
-                onPressed:
-                _selectStatusFolder,
-                icon: const Icon(
-                  Icons.folder_open,
-                ),
-                label: const Text(
-                  'Select WhatsApp Status Folder',
-                ),
-              ),
-            ],
-          ),
-        )
-
-            : Padding(
-          padding: const EdgeInsets.all(8),
-
-          child: GridView.builder(
-            itemCount: _statuses.length,
-
-            gridDelegate:
-            const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.75,
-            ),
-
-            itemBuilder: (
-                context,
-                index,
-                ) {
-              return _buildStatusItem(
-                _statuses[index],
+              return _loadStatuses(
+                _selectedSource!,
               );
             },
+            emptyTitle:
+            _statusFilter ==
+                'photos'
+                ? 'No photos found'
+                : _statusFilter ==
+                'videos'
+                ? 'No videos found'
+                : 'No statuses found',
+            emptyMessage:
+            _statusFilter ==
+                'photos'
+                ? 'Photo statuses will appear here.'
+                : _statusFilter ==
+                'videos'
+                ? 'Video statuses will appear here.'
+                : 'When someone posts a photo or video status, it will appear here.',
           ),
         ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  // SAVED TAB
+  // ==========================================================================
+
+  Widget _buildSavedTab() {
+    return Column(
+      children: [
+        const SizedBox(
+          height: 8,
+        ),
+
+        _buildFilterBar(
+          selectedFilter:
+          _savedFilter,
+          onChanged: (value) {
+            setState(() {
+              _savedFilter =
+                  value;
+            });
+          },
+        ),
+
+        const SizedBox(
+          height: 4,
+        ),
+
+        Expanded(
+          child:
+          _buildMediaGrid(
+            items:
+            _filteredSavedStatuses,
+            loading:
+            _loadingSaved,
+            onRefresh:
+            _loadSavedStatuses,
+            emptyTitle:
+            _savedFilter ==
+                'photos'
+                ? 'No saved photos'
+                : _savedFilter ==
+                'videos'
+                ? 'No saved videos'
+                : 'No saved statuses',
+            emptyMessage:
+            _savedFilter ==
+                'photos'
+                ? 'Photos you save will appear here.'
+                : _savedFilter ==
+                'videos'
+                ? 'Videos you save will appear here.'
+                : 'Statuses you download will appear here.',
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  // BUILD
+  // ==========================================================================
+
+  @override
+  Widget build(
+      BuildContext context,
+      ) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(
+          child:
+          CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final showingStatuses =
+        _currentTab == 0;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          showingStatuses
+              ? 'Statuses'
+              : 'Saved',
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.w700,
+          ),
+        ),
+        actions: [
+          if (showingStatuses)
+            _buildSourceSelector(),
+        ],
+      ),
+
+      body: IndexedStack(
+        index: _currentTab,
+        children: [
+          _buildStatusesTab(),
+          _buildSavedTab(),
+        ],
+      ),
+
+      bottomNavigationBar:
+      NavigationBar(
+        selectedIndex:
+        _currentTab,
+        onDestinationSelected:
+        _changeTab,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(
+              Icons
+                  .photo_library_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.photo_library,
+            ),
+            label: 'Statuses',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.download_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.download,
+            ),
+            label: 'Saved',
+          ),
+        ],
       ),
     );
   }
 }
 
-class StatusViewer extends StatefulWidget {
+// ============================================================================
+// STATUS THUMBNAIL
+// ============================================================================
+
+class StatusThumbnail
+    extends StatefulWidget {
   final Map<String, dynamic> status;
+  final Uint8List? cachedBytes;
+  final ValueChanged<Uint8List>
+  onLoaded;
 
-  final Future<Uint8List?> Function(
-      String uri,
-      ) readStatus;
-
-  const StatusViewer({
+  const StatusThumbnail({
     super.key,
     required this.status,
-    required this.readStatus,
+    required this.cachedBytes,
+    required this.onLoaded,
   });
 
   @override
-  State<StatusViewer> createState() =>
-      _StatusViewerState();
+  State<StatusThumbnail>
+  createState() =>
+      _StatusThumbnailState();
 }
 
-class _StatusViewerState
-    extends State<StatusViewer> {
+class _StatusThumbnailState
+    extends State<StatusThumbnail> {
+  static const MethodChannel
+  _channel =
+  MethodChannel(
+    'com.example.status_saver/status',
+  );
 
-  VideoPlayerController? _videoController;
-
-  Uint8List? _imageBytes;
-
+  Uint8List? _thumbnail;
   bool _loading = true;
-
-  bool _isVideo = false;
 
   @override
   void initState() {
     super.initState();
 
-    _isVideo =
-        (widget.status['mimeType'] ?? '')
-            .toString()
-            .startsWith('video/');
+    _thumbnail =
+        widget.cachedBytes;
 
-    _loadStatus();
+    if (_thumbnail != null) {
+      _loading = false;
+    } else {
+      _loadThumbnail();
+    }
   }
 
-  Future<void> _loadStatus() async {
+  @override
+  void didUpdateWidget(
+      covariant StatusThumbnail
+      oldWidget,
+      ) {
+    super.didUpdateWidget(
+      oldWidget,
+    );
 
-    final uri =
-    widget.status['uri'].toString();
+    final oldUri =
+    oldWidget.status['uri']
+        ?.toString();
 
-    if (_isVideo) {
+    final newUri =
+    widget.status['uri']
+        ?.toString();
 
+    if (oldUri != newUri) {
+      _thumbnail =
+          widget.cachedBytes;
+
+      _loading =
+          _thumbnail == null;
+
+      if (_thumbnail == null) {
+        _loadThumbnail();
+      }
+    }
+  }
+
+  Future<void>
+  _loadThumbnail() async {
+    try {
       final bytes =
-      await widget.readStatus(uri);
-
-      if (bytes == null) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-          });
-        }
-
-        return;
-      }
-
-      final tempFile =
-      await _createTemporaryVideo(bytes);
-
-      if (tempFile == null) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-          });
-        }
-
-        return;
-      }
-
-      final controller =
-      VideoPlayerController.file(
-        tempFile,
+      await _channel
+          .invokeMethod<
+          Uint8List>(
+        'getThumbnail',
+        {
+          'uri':
+          widget.status['uri'],
+        },
       );
-
-      await controller.initialize();
-
-      await controller.setLooping(true);
-
-      if (!mounted) {
-        controller.dispose();
-        return;
-      }
-
-      setState(() {
-        _videoController = controller;
-        _loading = false;
-      });
-
-      await controller.play();
-
-    } else {
-
-      final bytes =
-      await widget.readStatus(uri);
 
       if (!mounted) return;
 
-      setState(() {
-        _imageBytes = bytes;
-        _loading = false;
-      });
-    }
-  }
+      if (bytes != null) {
+        widget.onLoaded(bytes);
 
-  Future<File?> _createTemporaryVideo(
-      Uint8List bytes,
-      ) async {
-    try {
-      final directory =
-      await getTemporaryDirectory();
-
-      final file = File(
-        '${directory.path}/status_video.mp4',
-      );
-
-      await file.writeAsBytes(
-        bytes,
-        flush: true,
-      );
-
-      return file;
+        setState(() {
+          _thumbnail = bytes;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _loading = false;
+        });
+      }
     } catch (e) {
       debugPrint(
-        'Error creating temporary video: $e',
+        'Thumbnail error: $e',
       );
 
-      return null;
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
   @override
-  void dispose() {
+  Widget build(
+      BuildContext context,
+      ) {
+    if (_thumbnail != null) {
+      return Image.memory(
+        _thumbnail!,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+      );
+    }
 
-    _videoController?.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Scaffold(
-
-      backgroundColor: Colors.black,
-
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(
-          widget.status['name'] ?? 'Status',
-        ),
-      ),
-
-      body: Center(
+    return Container(
+      color: Colors.grey.shade200,
+      child: Center(
         child: _loading
-
-            ? const CircularProgressIndicator(
-          color: Colors.white,
-        )
-
-            : _isVideo
-
-            ? _videoController != null
-            ? AspectRatio(
-          aspectRatio:
-          _videoController!
-              .value
-              .aspectRatio,
-
-          child: VideoPlayer(
-            _videoController!,
+            ? const SizedBox(
+          width: 28,
+          height: 28,
+          child:
+          CircularProgressIndicator(
+            strokeWidth: 2,
           ),
         )
-
-            : const Text(
-          'Unable to play video',
-          style: TextStyle(
-            color: Colors.white,
-          ),
-        )
-
-            : _imageBytes != null
-            ? InteractiveViewer(
-          child: Image.memory(
-            _imageBytes!,
-            fit: BoxFit.contain,
-          ),
-        )
-
-            : const Text(
-          'Unable to load image',
-          style: TextStyle(
-            color: Colors.white,
-          ),
+            : Icon(
+          Icons
+              .broken_image_outlined,
+          color:
+          Colors.grey.shade500,
+          size: 36,
         ),
       ),
     );
