@@ -1,0 +1,185 @@
+
+
+import 'package:flutter/material.dart';
+
+import '../../services/status_service.dart';
+import '../../theme/app_theme.dart';
+
+class SettingsScreen extends StatelessWidget {
+  final StatusService statusService;
+
+  final bool whatsappInstalled;
+  final bool businessInstalled;
+
+  final bool whatsappConfigured;
+  final bool businessConfigured;
+
+  final Future<void> Function(String source) onSelectSource;
+  final Future<void> Function() onOpenWhatsApp;
+
+  const SettingsScreen({
+    super.key,
+    required this.statusService,
+    required this.whatsappInstalled,
+    required this.businessInstalled,
+    required this.whatsappConfigured,
+    required this.businessConfigured,
+    required this.onSelectSource,
+    required this.onOpenWhatsApp,
+  });
+
+  // ==========================================================================
+  // SOURCE NAME
+  // ==========================================================================
+
+  String _sourceName(String source) {
+    if (source == 'business') {
+      return 'WhatsApp Business';
+    }
+
+    return 'WhatsApp';
+  }
+
+  // ==========================================================================
+  // BUILD
+  // ==========================================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SizedBox(height: 8),
+
+        const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        const Text(
+          'Manage your WhatsApp status sources.',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // ====================================================================
+        // WHATSAPP SOURCES
+        // ====================================================================
+
+        Card(
+          child: Column(
+            children: [
+              if (whatsappInstalled)
+                _buildSourceTile(
+                  context,
+                  source: 'whatsapp',
+                  configured: whatsappConfigured,
+                  icon: Icons.chat_rounded,
+                ),
+
+              if (businessInstalled)
+                _buildSourceTile(
+                  context,
+                  source: 'business',
+                  configured: businessConfigured,
+                  icon: Icons.business,
+                ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ====================================================================
+        // OPEN WHATSAPP
+        // ====================================================================
+
+        Card(
+          child: ListTile(
+            leading: const Icon(
+              Icons.open_in_new_rounded,
+              color: AppColors.primaryDark,
+            ),
+
+            title: const Text(
+              'Open WhatsApp',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+
+            subtitle: const Text(
+              'Return directly to WhatsApp',
+            ),
+
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+
+            onTap: onOpenWhatsApp,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  // SOURCE TILE
+  // ==========================================================================
+
+  Widget _buildSourceTile(
+      BuildContext context, {
+        required String source,
+        required bool configured,
+        required IconData icon,
+      }) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor:
+        AppColors.primary.withOpacity(0.12),
+
+        child: Icon(
+          icon,
+          color: AppColors.primaryDark,
+        ),
+      ),
+
+      title: Text(
+        _sourceName(source),
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+
+      subtitle: Text(
+        configured
+            ? 'Status access is configured'
+            : 'Status folder needs to be configured',
+      ),
+
+      trailing: Icon(
+        configured
+            ? Icons.check_circle
+            : Icons.chevron_right,
+
+        color: configured
+            ? AppColors.primaryDark
+            : AppColors.textSecondary,
+      ),
+
+      onTap: () {
+        onSelectSource(source);
+      },
+    );
+  }
+}

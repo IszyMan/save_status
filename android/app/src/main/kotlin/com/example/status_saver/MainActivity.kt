@@ -126,6 +126,30 @@ class MainActivity : FlutterActivity() {
                     )
                 }
 
+
+                // =====================================================
+                // OPEN WHATSAPP
+                // =====================================================
+
+                "openWhatsApp" -> {
+                    val source = call.argument<String>("source")
+
+                    val packageName = when (source) {
+                        "WhatsApp Business" -> "com.whatsapp.w4b"
+                        else -> "com.whatsapp"
+                    }
+
+                    val launchIntent =
+                        packageManager.getLaunchIntentForPackage(packageName)
+
+                    if (launchIntent != null) {
+                        startActivity(launchIntent)
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
+                }
+
                 // =====================================================
                 // SELECT STATUS FOLDER
                 // =====================================================
@@ -984,6 +1008,12 @@ class MainActivity : FlutterActivity() {
                     )
                 }
             }
+        }
+
+        statuses.sortByDescending {
+            it["lastModified"]
+                ?.toLongOrNull()
+                ?: 0L
         }
 
         return statuses

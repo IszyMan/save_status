@@ -1,8 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../screens/onboarding.dart';
+import '../screens/settings.dart';
+import '../screens/splash_screen.dart';
+import '../services/status_service.dart';
+import '../theme/app_theme.dart';
 import 'view.dart';
 
 class StatusSaverApp extends StatelessWidget {
@@ -12,12 +17,145 @@ class StatusSaverApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Save Status',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.green,
+      title: 'Save Statusly',
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.light,
+      home: const AppStartupScreen(),
+    );
+  }
+}
+
+// ============================================================================
+// APP STARTUP
+// ============================================================================
+
+class AppStartupScreen extends StatefulWidget {
+  const AppStartupScreen({super.key});
+
+  @override
+  State<AppStartupScreen> createState() => _AppStartupScreenState();
+}
+
+class _AppStartupScreenState extends State<AppStartupScreen> {
+  bool _checking = true;
+  bool _onboardingCompleted = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    try {
+      final preferences =
+      await SharedPreferences.getInstance();
+
+      final completed =
+          preferences.getBool(
+            'onboarding_completed',
+          ) ??
+              false;
+
+      if (!mounted) return;
+
+      setState(() {
+        _onboardingCompleted = completed;
+        _checking = false;
+      });
+    } catch (e) {
+      debugPrint(
+        'Unable to check onboarding status: $e',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _onboardingCompleted = false;
+        _checking = false;
+      });
+    }
+  }
+
+  Future<void> _completeOnboarding() async {
+    try {
+      final preferences =
+      await SharedPreferences.getInstance();
+
+      await preferences.setBool(
+        'onboarding_completed',
+        true,
+      );
+    } catch (e) {
+      debugPrint(
+        'Unable to save onboarding status: $e',
+      );
+    }
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+            ) {
+          return const StatusHomePage();
+        },
+        transitionDuration: const Duration(
+          milliseconds: 350,
+        ),
+        transitionsBuilder: (
+            context,
+            animation,
+            secondaryAnimation,
+            child,
+            ) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
       ),
-      home: const StatusHomePage(),
+    );
+  }
+
+  Widget _getNextScreen() {
+    if (!_onboardingCompleted) {
+      return OnboardingScreen(
+        onGetStarted: _completeOnboarding,
+      );
+    }
+
+    return const StatusHomePage();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checking) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF075E54),
+        body: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor:
+              AlwaysStoppedAnimation<Color>(
+                Color(0xFF25D366),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SplashScreen(
+      nextScreen: _getNextScreen(),
     );
   }
 }
@@ -30,16 +168,11 @@ class StatusHomePage extends StatefulWidget {
   const StatusHomePage({super.key});
 
   @override
-  State<StatusHomePage> createState() =>
-      _StatusHomePageState();
+  State<StatusHomePage> createState() => _StatusHomePageState();
 }
 
-class _StatusHomePageState
-    extends State<StatusHomePage> {
-  static const MethodChannel _channel =
-  MethodChannel(
-    'com.example.status_saver/status',
-  );
+class _StatusHomePageState extends State<StatusHomePage> {
+  final StatusService _statusService = StatusService();
 
   // ==========================================================================
   // APP STATE
@@ -58,19 +191,26 @@ class _StatusHomePageState
 
   // 0 = Statuses
   // 1 = Saved
+  // 2 = Settings
   int _currentTab = 0;
+  final PageController _pageController = PageController();
 
-  String _statusFilter = 'all';
-  String _savedFilter = 'all';
+  // Only two filters.
+  // Videos is the default because "All" has been removed.
+  String _statusFilter = 'images';
+  String _savedFilter = 'images';
 
   List<Map<String, dynamic>> _statuses = [];
-
   List<Map<String, dynamic>> _savedStatuses = [];
 
   bool _loadingStatuses = false;
   bool _loadingSaved = false;
 
   final Map<String, Uint8List> _thumbnailCache = {};
+
+  // ==========================================================================
+  // INIT
+  // ==========================================================================
 
   @override
   void initState() {
@@ -80,54 +220,49 @@ class _StatusHomePageState
     _loadSavedStatuses();
   }
 
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   // ==========================================================================
   // LOAD APP STATE
   // ==========================================================================
 
   Future<void> _loadAppState() async {
     try {
-      final result =
-      await _channel.invokeMethod(
-        'getAppState',
-      );
+      final data = await _statusService.getAppState();
 
-      if (result == null) {
+      if (data == null) {
         return;
       }
-
-      final data =
-      Map<String, dynamic>.from(result);
 
       if (!mounted) return;
 
       setState(() {
-        _whatsappInstalled =
-            data['whatsappInstalled'] == true;
+        _whatsappInstalled = data['whatsappInstalled'] == true;
+        _businessInstalled = data['businessInstalled'] == true;
 
-        _businessInstalled =
-            data['businessInstalled'] == true;
-
-        _whatsappConfigured =
-            data['whatsappConfigured'] == true;
-
-        _businessConfigured =
-            data['businessConfigured'] == true;
+        _whatsappConfigured = data['whatsappConfigured'] == true;
+        _businessConfigured = data['businessConfigured'] == true;
 
         _lastSelectedSource =
-        data['lastSelectedSource'];
+            data['lastSelectedSource']?.toString();
       });
 
-      _selectInitialSource();
+      await _selectInitialSource();
     } catch (e) {
       debugPrint(
         'Unable to load app state: $e',
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
@@ -135,62 +270,54 @@ class _StatusHomePageState
   // SELECT INITIAL SOURCE
   // ==========================================================================
 
-  void _selectInitialSource() {
-    final installedSources =
-        _installedSources;
+  Future<void> _selectInitialSource() async {
+    final installedSources = _installedSources;
 
     if (installedSources.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _selectedSource = null;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _selectedSource = null;
+      });
 
       return;
     }
 
     if (_lastSelectedSource != null &&
-        installedSources.contains(
-          _lastSelectedSource,
-        ) &&
-        _isConfigured(
-          _lastSelectedSource!,
-        )) {
-      if (mounted) {
-        setState(() {
-          _selectedSource =
-              _lastSelectedSource;
-        });
-      }
+        installedSources.contains(_lastSelectedSource) &&
+        _isConfigured(_lastSelectedSource!)) {
+      if (!mounted) return;
 
-      _loadStatuses(
+      setState(() {
+        _selectedSource = _lastSelectedSource;
+      });
+
+      await _loadStatuses(
         _lastSelectedSource!,
       );
 
       return;
     }
 
-    for (final source
-    in installedSources) {
+    for (final source in installedSources) {
       if (_isConfigured(source)) {
-        if (mounted) {
-          setState(() {
-            _selectedSource = source;
-          });
-        }
+        if (!mounted) return;
 
-        _loadStatuses(source);
+        setState(() {
+          _selectedSource = source;
+        });
+
+        await _loadStatuses(source);
 
         return;
       }
     }
 
-    if (mounted) {
-      setState(() {
-        _selectedSource =
-            installedSources.first;
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _selectedSource = installedSources.first;
+    });
   }
 
   // ==========================================================================
@@ -211,9 +338,7 @@ class _StatusHomePageState
     return sources;
   }
 
-  bool _isConfigured(
-      String source,
-      ) {
+  bool _isConfigured(String source) {
     if (source == 'business') {
       return _businessConfigured;
     }
@@ -221,9 +346,7 @@ class _StatusHomePageState
     return _whatsappConfigured;
   }
 
-  String _sourceName(
-      String source,
-      ) {
+  String _sourceName(String source) {
     if (source == 'business') {
       return 'WhatsApp Business';
     }
@@ -232,76 +355,110 @@ class _StatusHomePageState
   }
 
   // ==========================================================================
-  // SETUP SOURCE
+  // OPEN WHATSAPP
   // ==========================================================================
 
-  Future<void> _setupSource(
-      String source,
-      ) async {
+  Future<void> _openWhatsApp() async {
+    final source = _selectedSource;
+
+    if (source == null) {
+      return;
+    }
+
     try {
-      final success =
-      await _channel.invokeMethod<bool>(
-        'selectStatusFolder',
-        {
-          'source': source,
-        },
+      final opened = await _statusService.openWhatsApp(
+        source,
       );
 
-      if (success == true) {
-        await _loadAppState();
+      if (!mounted) return;
 
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${_sourceName(source)} status access is ready.',
-              ),
-              behavior:
-              SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Please select the .Statuses folder.',
-              ),
-              behavior:
-              SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+      if (!opened) {
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Unable to set up status access: $e',
+              '${_sourceName(source)} is not installed.',
             ),
-            behavior:
-            SnackBarBehavior.floating,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
+    } catch (e) {
+      debugPrint(
+        'Unable to open WhatsApp: $e',
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to open WhatsApp.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   // ==========================================================================
-  // LOAD DETECTED STATUSES
+  // SETUP SOURCE
   // ==========================================================================
 
-  Future<void> _loadStatuses(
-      String source,
-      ) async {
+  Future<void> _setupSource(String source) async {
+    try {
+      final success =
+      await _statusService.selectStatusFolder(
+        source,
+      );
+
+      if (!mounted) return;
+
+      if (success == true) {
+        await _loadAppState();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${_sourceName(source)} status access is ready.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please select the .Statuses folder.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        'Unable to set up status access: $e',
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to set up status access: $e',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // ==========================================================================
+  // LOAD STATUSES
+  // ==========================================================================
+
+  Future<void> _loadStatuses(String source) async {
     if (!_isConfigured(source)) {
       return;
     }
@@ -313,26 +470,25 @@ class _StatusHomePageState
     }
 
     try {
-      final result =
-      await _channel.invokeMethod(
-        'getStatuses',
-        {
-          'source': source,
-        },
+      final statuses = await _statusService.getStatuses(
+        source,
       );
 
-      final statuses =
-      <Map<String, dynamic>>[];
+      statuses.sort(
+            (a, b) {
+          final aTime = int.tryParse(
+            a['lastModified']?.toString() ?? '',
+          ) ??
+              0;
 
-      if (result is List) {
-        for (final item in result) {
-          statuses.add(
-            Map<String, dynamic>.from(
-              item,
-            ),
-          );
-        }
-      }
+          final bTime = int.tryParse(
+            b['lastModified']?.toString() ?? '',
+          ) ??
+              0;
+
+          return bTime.compareTo(aTime);
+        },
+      );
 
       if (!mounted) return;
 
@@ -344,11 +500,11 @@ class _StatusHomePageState
         'Unable to load statuses: $e',
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _loadingStatuses = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _loadingStatuses = false;
+      });
     }
   }
 
@@ -364,23 +520,8 @@ class _StatusHomePageState
     }
 
     try {
-      final result =
-      await _channel.invokeMethod(
-        'getSavedStatuses',
-      );
-
       final saved =
-      <Map<String, dynamic>>[];
-
-      if (result is List) {
-        for (final item in result) {
-          saved.add(
-            Map<String, dynamic>.from(
-              item,
-            ),
-          );
-        }
-      }
+      await _statusService.getSavedStatuses();
 
       if (!mounted) return;
 
@@ -392,11 +533,11 @@ class _StatusHomePageState
         'Unable to load saved statuses: $e',
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _loadingSaved = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _loadingSaved = false;
+      });
     }
   }
 
@@ -404,27 +545,22 @@ class _StatusHomePageState
   // SELECT SOURCE
   // ==========================================================================
 
-  Future<void> _selectSource(
-      String source,
-      ) async {
+  Future<void> _selectSource(String source) async {
     if (!_isConfigured(source)) {
       await _setupSource(source);
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _selectedSource = source;
-        _statusFilter = 'all';
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _selectedSource = source;
+      _statusFilter = 'images';
+    });
 
     try {
-      await _channel.invokeMethod(
-        'setLastSelectedSource',
-        {
-          'source': source,
-        },
+      await _statusService.setLastSelectedSource(
+        source,
       );
     } catch (e) {
       debugPrint(
@@ -439,70 +575,64 @@ class _StatusHomePageState
   // BOTTOM NAVIGATION
   // ==========================================================================
 
-  void _changeTab(
-      int index,
-      ) {
-    if (!mounted) return;
+  Future<void> _changeTab(int index) async {
+    if (index == _currentTab) {
+      return;
+    }
+
+    await _pageController.animateToPage(
+      index,
+      duration: const Duration(
+        milliseconds: 420,
+      ),
+      curve: Curves.easeInOutCubic,
+    );
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _currentTab = index;
     });
-
-    if (index == 0) {
-      if (_selectedSource != null &&
-          _isConfigured(
-            _selectedSource!,
-          )) {
-        _loadStatuses(
-          _selectedSource!,
-        );
-      }
-    } else {
-      _loadSavedStatuses();
-    }
   }
 
   // ==========================================================================
   // FILTER
   // ==========================================================================
 
-  List<Map<String, dynamic>>
-  _filterMedia(
+  List<Map<String, dynamic>> _filterMedia(
       List<Map<String, dynamic>> items,
       String filter,
       ) {
-    if (filter == 'all') {
-      return items;
-    }
+    return items.where(
+          (status) {
+        final mime = (status['mimeType'] ?? '')
+            .toString()
+            .toLowerCase();
 
-    return items.where((status) {
-      final mime =
-      (status['mimeType'] ?? '')
-          .toString()
-          .toLowerCase();
+        if (filter == 'videos') {
+          return mime.startsWith('video/') ||
+              _isVideo(status);
+        }
 
-      if (filter == 'photos') {
-        return mime.startsWith('image/');
-      }
+        if (filter == 'images') {
+          return mime.startsWith('image/');
+        }
 
-      if (filter == 'videos') {
-        return mime.startsWith('video/');
-      }
-
-      return true;
-    }).toList();
+        return false;
+      },
+    ).toList();
   }
 
-  List<Map<String, dynamic>>
-  get _filteredStatuses {
+  List<Map<String, dynamic>> get _filteredStatuses {
     return _filterMedia(
       _statuses,
       _statusFilter,
     );
   }
 
-  List<Map<String, dynamic>>
-  get _filteredSavedStatuses {
+  List<Map<String, dynamic>> get _filteredSavedStatuses {
     return _filterMedia(
       _savedStatuses,
       _savedFilter,
@@ -513,11 +643,8 @@ class _StatusHomePageState
   // VIDEO CHECK
   // ==========================================================================
 
-  bool _isVideo(
-      Map<String, dynamic> status,
-      ) {
-    final mime =
-    (status['mimeType'] ?? '')
+  bool _isVideo(Map<String, dynamic> status) {
+    final mime = (status['mimeType'] ?? '')
         .toString()
         .toLowerCase();
 
@@ -525,8 +652,7 @@ class _StatusHomePageState
       return true;
     }
 
-    final name =
-    (status['name'] ?? '')
+    final name = (status['name'] ?? '')
         .toString()
         .toLowerCase();
 
@@ -546,16 +672,12 @@ class _StatusHomePageState
       ) async {
     try {
       final path =
-      await _channel.invokeMethod<String>(
-        'prepareStatus',
-        {
-          'uri': status['uri'],
-          'name': status['name'],
-        },
+      await _statusService.prepareStatus(
+        uri: status['uri'],
+        name: status['name'],
       );
 
-      if (path == null ||
-          path.isEmpty) {
+      if (path == null || path.isEmpty) {
         throw Exception(
           'Unable to prepare status',
         );
@@ -573,22 +695,22 @@ class _StatusHomePageState
         ),
       );
 
-      // Refresh saved media after returning.
       await _loadSavedStatuses();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Unable to open status: $e',
-            ),
-            behavior:
-            SnackBarBehavior.floating,
+      debugPrint(
+        'Unable to open status: $e',
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to open status: $e',
           ),
-        );
-      }
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -600,7 +722,8 @@ class _StatusHomePageState
       String uri,
       Uint8List bytes,
       ) {
-    if (_thumbnailCache.length >= 100) {
+    if (_thumbnailCache.length >= 100 &&
+        !_thumbnailCache.containsKey(uri)) {
       _thumbnailCache.remove(
         _thumbnailCache.keys.first,
       );
@@ -614,17 +737,14 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildSetupContent() {
-    final installed =
-        _installedSources;
+    final installed = _installedSources;
 
     return SafeArea(
       child: Center(
         child: SingleChildScrollView(
-          padding:
-          const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
+            constraints: const BoxConstraints(
               maxWidth: 500,
             ),
             child: Column(
@@ -639,19 +759,15 @@ class _StatusHomePageState
                   child: Container(
                     width: 72,
                     height: 72,
-                    decoration:
-                    BoxDecoration(
-                      color: Colors.green
+                    decoration: BoxDecoration(
+                      color: AppColors.primary
                           .withOpacity(0.12),
-                      shape:
-                      BoxShape.circle,
+                      shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons
-                          .download_rounded,
+                      Icons.download_rounded,
                       size: 36,
-                      color:
-                      Colors.green,
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ),
@@ -662,12 +778,10 @@ class _StatusHomePageState
 
                 const Text(
                   'Save Status',
-                  textAlign:
-                  TextAlign.center,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
-                    fontWeight:
-                    FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -677,13 +791,11 @@ class _StatusHomePageState
 
                 const Text(
                   'Save photos and videos from your WhatsApp statuses.',
-                  textAlign:
-                  TextAlign.center,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
                     height: 1.5,
-                    color:
-                    Colors.black54,
+                    color: AppColors.textSecondary,
                   ),
                 ),
 
@@ -694,16 +806,13 @@ class _StatusHomePageState
                 if (installed.isEmpty)
                   _buildNoWhatsAppCard(),
 
-                for (final source
-                in installed)
+                for (final source in installed)
                   Padding(
                     padding:
-                    const EdgeInsets
-                        .only(
+                    const EdgeInsets.only(
                       bottom: 14,
                     ),
-                    child:
-                    _buildSetupCard(
+                    child: _buildSetupCard(
                       source,
                     ),
                   ),
@@ -719,27 +828,20 @@ class _StatusHomePageState
   // SETUP CARD
   // ==========================================================================
 
-  Widget _buildSetupCard(
-      String source,
-      ) {
-    final configured =
-    _isConfigured(source);
+  Widget _buildSetupCard(String source) {
+    final configured = _isConfigured(source);
 
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape:
-      RoundedRectangleBorder(
-        borderRadius:
-        BorderRadius.circular(18),
-        side: BorderSide(
-          color:
-          Colors.grey.shade300,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(
+          color: AppColors.divider,
         ),
       ),
       child: InkWell(
-        borderRadius:
-        BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           if (configured) {
             _selectSource(source);
@@ -748,26 +850,21 @@ class _StatusHomePageState
           }
         },
         child: Padding(
-          padding:
-          const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(18),
           child: Row(
             children: [
               Container(
                 width: 50,
                 height: 50,
-                decoration:
-                BoxDecoration(
-                  color: Colors.green
+                decoration: BoxDecoration(
+                  color: AppColors.primary
                       .withOpacity(0.10),
                   borderRadius:
-                  BorderRadius.circular(
-                    14,
-                  ),
+                  BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.chat_rounded,
-                  color:
-                  Colors.green,
+                  color: AppColors.primaryDark,
                 ),
               ),
 
@@ -778,31 +875,29 @@ class _StatusHomePageState
               Expanded(
                 child: Column(
                   crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _sourceName(
-                        source,
-                      ),
-                      style:
-                      const TextStyle(
+                      _sourceName(source),
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight:
                         FontWeight.w700,
                       ),
                     ),
+
                     const SizedBox(
                       height: 5,
                     ),
+
                     Text(
                       configured
                           ? 'Status access is ready'
                           : 'Set up status access',
                       style: TextStyle(
                         color: configured
-                            ? Colors.green
-                            : Colors.black54,
+                            ? AppColors.primaryDark
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -811,13 +906,11 @@ class _StatusHomePageState
 
               Icon(
                 configured
-                    ? Icons
-                    .check_circle
-                    : Icons
-                    .chevron_right,
+                    ? Icons.check_circle
+                    : Icons.chevron_right,
                 color: configured
-                    ? Colors.green
-                    : Colors.black45,
+                    ? AppColors.primaryDark
+                    : AppColors.textSecondary,
               ),
             ],
           ),
@@ -834,33 +927,36 @@ class _StatusHomePageState
     return Card(
       elevation: 0,
       child: Padding(
-        padding:
-        const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: const [
             Icon(
-              Icons
-                  .chat_bubble_outline,
+              Icons.chat_bubble_outline,
               size: 48,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
-            SizedBox(height: 16),
+
+            SizedBox(
+              height: 16,
+            ),
+
             Text(
               'WhatsApp not found',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight:
-                FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+
+            SizedBox(
+              height: 8,
+            ),
+
             Text(
               'Install WhatsApp or WhatsApp Business to use Status Saver.',
-              textAlign:
-              TextAlign.center,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color:
-                Colors.black54,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -874,28 +970,24 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildSourceSelector() {
-    final source =
-        _selectedSource;
+    final source = _selectedSource;
 
     if (source == null) {
       return const SizedBox.shrink();
     }
 
-    if (_installedSources.length ==
-        1) {
+    if (_installedSources.length == 1) {
       return Padding(
-        padding:
-        const EdgeInsets.only(
-          right: 12,
+        padding: const EdgeInsets.only(
+          right: 4,
         ),
         child: Center(
           child: Text(
             _sourceName(source),
-            style:
-            const TextStyle(
-              fontSize: 16,
-              fontWeight:
-              FontWeight.w700,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -903,54 +995,48 @@ class _StatusHomePageState
     }
 
     return Padding(
-      padding:
-      const EdgeInsets.only(
-        right: 8,
+      padding: const EdgeInsets.only(
+        right: 4,
       ),
-      child:
-      PopupMenuButton<String>(
-        onSelected:
-        _selectSource,
+      child: PopupMenuButton<String>(
+        onSelected: _selectSource,
         itemBuilder: (context) {
-          return _installedSources
-              .map(
+          return _installedSources.map(
                 (item) {
               final configured =
               _isConfigured(item);
 
               final selected =
-                  item ==
-                      _selectedSource;
+                  item == _selectedSource;
 
-              return PopupMenuItem<
-                  String>(
+              return PopupMenuItem<String>(
                 value: item,
                 child: Row(
                   children: [
                     Icon(
                       configured
-                          ? Icons
-                          .chat_rounded
-                          : Icons
-                          .settings_outlined,
+                          ? Icons.chat_rounded
+                          : Icons.settings_outlined,
                       size: 20,
+                      color: AppColors.primaryDark,
                     ),
+
                     const SizedBox(
                       width: 10,
                     ),
+
                     Expanded(
                       child: Text(
-                        _sourceName(
-                          item,
-                        ),
+                        _sourceName(item),
                       ),
                     ),
+
                     if (selected)
                       const Icon(
                         Icons.check,
                         size: 20,
                         color:
-                        Colors.green,
+                        AppColors.primaryDark,
                       ),
                   ],
                 ),
@@ -959,39 +1045,33 @@ class _StatusHomePageState
           ).toList();
         },
         child: Container(
-          padding:
-          const EdgeInsets
-              .symmetric(
-            horizontal: 12,
-            vertical: 8,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 7,
           ),
-          decoration:
-          BoxDecoration(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.18),
             borderRadius:
-            BorderRadius.circular(
-              10,
-            ),
-            color:
-            Colors.grey.shade100,
+            BorderRadius.circular(10),
           ),
           child: Row(
-            mainAxisSize:
-            MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 _sourceName(source),
-                style:
-                const TextStyle(
-                  fontWeight:
-                  FontWeight.w700,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(
-                width: 4,
+                width: 3,
               ),
+
               const Icon(
-                Icons
-                    .keyboard_arrow_down,
+                Icons.keyboard_arrow_down,
+                color: Colors.white,
                 size: 20,
               ),
             ],
@@ -1007,45 +1087,52 @@ class _StatusHomePageState
 
   Widget _buildFilterBar({
     required String selectedFilter,
-    required ValueChanged<String>
-    onChanged,
+    required ValueChanged<String> onChanged,
   }) {
-    final filters = [
-      ('all', 'All'),
-      ('photos', 'Photos'),
+    const filters = [
+      ('images', 'Images'),
       ('videos', 'Videos'),
     ];
 
     return SingleChildScrollView(
-      scrollDirection:
-      Axis.horizontal,
-      padding:
-      const EdgeInsets.symmetric(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(
         horizontal: 16,
       ),
       child: Row(
         children: filters.map(
               (item) {
             final selected =
-                selectedFilter ==
-                    item.$1;
+                selectedFilter == item.$1;
 
             return Padding(
               padding:
-              const EdgeInsets
-                  .only(
+              const EdgeInsets.only(
                 right: 8,
               ),
               child: ChoiceChip(
-                label:
-                Text(item.$2),
-                selected:
-                selected,
+                label: Text(item.$2),
+                selected: selected,
                 onSelected: (_) {
-                  onChanged(
-                    item.$1,
-                  );
+                  onChanged(item.$1);
                 },
+                selectedColor:
+                AppColors.primaryDark,
+                backgroundColor:
+                AppColors.surface,
+                labelStyle: TextStyle(
+                  color: selected
+                      ? Colors.white
+                      : AppColors.textPrimary,
+                  fontWeight:
+                  FontWeight.w600,
+                ),
+                side: BorderSide(
+                  color: selected
+                      ? AppColors.primaryDark
+                      : AppColors.divider,
+                ),
+                showCheckmark: false,
               ),
             );
           },
@@ -1059,23 +1146,17 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildMediaGrid({
-    required List<
-        Map<String, dynamic>>
-    items,
+    required List<Map<String, dynamic>> items,
     required bool loading,
-    required Future<void>
-    Function() onRefresh,
+    required Future<void> Function() onRefresh,
     required String emptyTitle,
     required String emptyMessage,
   }) {
-    if (loading) {
-      return const Center(
-        child:
-        CircularProgressIndicator(),
-      );
-    }
-
     if (items.isEmpty) {
+      if (loading) {
+        return const SizedBox.expand();
+      }
+
       return _buildEmptyMediaState(
         onRefresh: onRefresh,
         title: emptyTitle,
@@ -1084,12 +1165,12 @@ class _StatusHomePageState
     }
 
     return RefreshIndicator(
+      color: AppColors.primaryDark,
       onRefresh: onRefresh,
       child: GridView.builder(
         physics:
         const AlwaysScrollableScrollPhysics(),
-        padding:
-        const EdgeInsets.fromLTRB(
+        padding: const EdgeInsets.fromLTRB(
           16,
           8,
           16,
@@ -1101,25 +1182,19 @@ class _StatusHomePageState
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          childAspectRatio: 0.78,
+          childAspectRatio: 1.05,
         ),
         itemCount: items.length,
-        itemBuilder:
-            (context, index) {
-          final status =
-          items[index];
+        itemBuilder: (context, index) {
+          final status = items[index];
 
           final uri =
-              status['uri']
-                  ?.toString() ??
+              status['uri']?.toString() ??
                   'status_$index';
 
           return KeyedSubtree(
             key: ValueKey(uri),
-            child:
-            _buildMediaTile(
-              status,
-            ),
+            child: _buildMediaTile(status),
           );
         },
       ),
@@ -1134,12 +1209,9 @@ class _StatusHomePageState
       Map<String, dynamic> status,
       ) {
     final uri =
-        status['uri']
-            ?.toString() ??
-            '';
+        status['uri']?.toString() ?? '';
 
-    final isVideo =
-    _isVideo(status);
+    final isVideo = _isVideo(status);
 
     return GestureDetector(
       onTap: () {
@@ -1151,10 +1223,16 @@ class _StatusHomePageState
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // --------------------------------------------------------------
+            // THUMBNAIL
+            // --------------------------------------------------------------
+
             StatusThumbnail(
               status: status,
               cachedBytes:
               _thumbnailCache[uri],
+              statusService:
+              _statusService,
               onLoaded: (bytes) {
                 _cacheThumbnail(
                   uri,
@@ -1162,6 +1240,10 @@ class _StatusHomePageState
                 );
               },
             ),
+
+            // --------------------------------------------------------------
+            // VIDEO PLAY ICON
+            // --------------------------------------------------------------
 
             if (isVideo)
               Center(
@@ -1171,68 +1253,56 @@ class _StatusHomePageState
                   decoration:
                   BoxDecoration(
                     color: Colors.black
-                        .withOpacity(
-                      0.55,
-                    ),
-                    shape:
-                    BoxShape.circle,
+                        .withOpacity(0.55),
+                    shape: BoxShape.circle,
                   ),
-                  child:
-                  const Icon(
+                  child: const Icon(
                     Icons.play_arrow,
-                    color:
-                    Colors.white,
+                    color: Colors.white,
                     size: 30,
                   ),
                 ),
               ),
 
+            // --------------------------------------------------------------
+            // DOWNLOAD ARROW
+            //
+            // IMPORTANT:
+            // This does NOT download the status.
+            // It only opens the same StatusView as tapping the preview.
+            // --------------------------------------------------------------
+
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding:
-                const EdgeInsets
-                    .fromLTRB(
-                  10,
-                  22,
-                  10,
-                  10,
+              bottom: 10,
+              right: 10,
+              child: Material(
+                color: AppColors.primaryDark,
+                shape: const CircleBorder(),
+                elevation: 3,
+                shadowColor:
+                Colors.black.withOpacity(
+                  0.25,
                 ),
-                decoration:
-                const BoxDecoration(
-                  gradient:
-                  LinearGradient(
-                    begin:
-                    Alignment
-                        .topCenter,
-                    end:
-                    Alignment
-                        .bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black87,
-                    ],
-                  ),
-                ),
-                child: Text(
-                  status['name']
-                      ?.toString() ??
-                      'Status',
-                  maxLines: 1,
-                  overflow:
-                  TextOverflow
-                      .ellipsis,
-                  style:
-                  const TextStyle(
-                    color:
-                    Colors.white,
-                    fontSize: 12,
+                child: InkWell(
+                  customBorder:
+                  const CircleBorder(),
+                  onTap: () {
+                    _openStatus(status);
+                  },
+                  child: const SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Icon(
+                      Icons.download_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
             ),
+
+
           ],
         ),
       ),
@@ -1244,12 +1314,12 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildEmptyMediaState({
-    required Future<void>
-    Function() onRefresh,
+    required Future<void> Function() onRefresh,
     required String title,
     required String message,
   }) {
     return RefreshIndicator(
+      color: AppColors.primaryDark,
       onRefresh: onRefresh,
       child: ListView(
         physics:
@@ -1257,49 +1327,43 @@ class _StatusHomePageState
         children: [
           SizedBox(
             height:
-            MediaQuery.of(context)
-                .size
-                .height *
+            MediaQuery.of(context).size.height *
                 0.28,
           ),
-          Icon(
-            Icons
-                .photo_library_outlined,
+
+          const Icon(
+            Icons.photo_library_outlined,
             size: 60,
-            color:
-            Colors.grey.shade400,
+            color: AppColors.textSecondary,
           ),
+
           const SizedBox(
             height: 16,
           ),
+
           Text(
             title,
-            textAlign:
-            TextAlign.center,
-            style:
-            const TextStyle(
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               fontSize: 19,
-              fontWeight:
-              FontWeight.w700,
+              fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(
             height: 8,
           ),
+
           Padding(
             padding:
-            const EdgeInsets
-                .symmetric(
+            const EdgeInsets.symmetric(
               horizontal: 40,
             ),
             child: Text(
               message,
-              textAlign:
-              TextAlign.center,
-              style:
-              const TextStyle(
-                color:
-                Colors.black54,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
                 height: 1.4,
               ),
             ),
@@ -1314,13 +1378,15 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildStatusesTab() {
-    final source =
-        _selectedSource;
+    final source = _selectedSource;
 
     if (source == null ||
         !_isConfigured(source)) {
       return _buildSetupContent();
     }
+
+    final showingVideos =
+        _statusFilter == 'videos';
 
     return Column(
       children: [
@@ -1333,8 +1399,7 @@ class _StatusHomePageState
           _statusFilter,
           onChanged: (value) {
             setState(() {
-              _statusFilter =
-                  value;
+              _statusFilter = value;
             });
           },
         ),
@@ -1344,38 +1409,20 @@ class _StatusHomePageState
         ),
 
         Expanded(
-          child:
-          _buildMediaGrid(
-            items:
-            _filteredStatuses,
-            loading:
-            _loadingStatuses,
+          child: _buildMediaGrid(
+            items: _filteredStatuses,
+            loading: _loadingStatuses,
             onRefresh: () {
-              if (_selectedSource ==
-                  null) {
-                return Future.value();
-              }
-
               return _loadStatuses(
-                _selectedSource!,
+                source,
               );
             },
-            emptyTitle:
-            _statusFilter ==
-                'photos'
-                ? 'No photos found'
-                : _statusFilter ==
-                'videos'
+            emptyTitle: showingVideos
                 ? 'No videos found'
-                : 'No statuses found',
-            emptyMessage:
-            _statusFilter ==
-                'photos'
-                ? 'Photo statuses will appear here.'
-                : _statusFilter ==
-                'videos'
+                : 'No images found',
+            emptyMessage: showingVideos
                 ? 'Video statuses will appear here.'
-                : 'When someone posts a photo or video status, it will appear here.',
+                : 'Image statuses will appear here.',
           ),
         ),
       ],
@@ -1387,6 +1434,9 @@ class _StatusHomePageState
   // ==========================================================================
 
   Widget _buildSavedTab() {
+    final showingVideos =
+        _savedFilter == 'videos';
+
     return Column(
       children: [
         const SizedBox(
@@ -1398,8 +1448,7 @@ class _StatusHomePageState
           _savedFilter,
           onChanged: (value) {
             setState(() {
-              _savedFilter =
-                  value;
+              _savedFilter = value;
             });
           },
         ),
@@ -1409,30 +1458,19 @@ class _StatusHomePageState
         ),
 
         Expanded(
-          child:
-          _buildMediaGrid(
+          child: _buildMediaGrid(
             items:
             _filteredSavedStatuses,
             loading:
             _loadingSaved,
             onRefresh:
             _loadSavedStatuses,
-            emptyTitle:
-            _savedFilter ==
-                'photos'
-                ? 'No saved photos'
-                : _savedFilter ==
-                'videos'
+            emptyTitle: showingVideos
                 ? 'No saved videos'
-                : 'No saved statuses',
-            emptyMessage:
-            _savedFilter ==
-                'photos'
-                ? 'Photos you save will appear here.'
-                : _savedFilter ==
-                'videos'
+                : 'No saved images',
+            emptyMessage: showingVideos
                 ? 'Videos you save will appear here.'
-                : 'Statuses you download will appear here.',
+                : 'Images you save will appear here.',
           ),
         ),
       ],
@@ -1444,14 +1482,13 @@ class _StatusHomePageState
   // ==========================================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
         body: Center(
-          child:
-          CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: AppColors.primaryDark,
+          ),
         ),
       );
     }
@@ -1459,57 +1496,110 @@ class _StatusHomePageState
     final showingStatuses =
         _currentTab == 0;
 
+    final showingSaved =
+        _currentTab == 1;
+
     return Scaffold(
+      // ======================================================================
+      // APP BAR
+      // ======================================================================
+
       appBar: AppBar(
         title: Text(
           showingStatuses
-              ? 'Statuses'
-              : 'Saved',
-          style:
-          const TextStyle(
-            fontWeight:
-            FontWeight.w700,
+              ? 'Statusly'
+              : showingSaved
+              ? 'Saved'
+              : 'Settings',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
           ),
         ),
         actions: [
           if (showingStatuses)
             _buildSourceSelector(),
+
+          IconButton(
+            tooltip: 'Open WhatsApp',
+            onPressed: _openWhatsApp,
+            icon: const Icon(
+              Icons.chat_rounded,
+            ),
+          ),
+
+          const SizedBox(
+            width: 4,
+          ),
         ],
       ),
 
-      body: IndexedStack(
-        index: _currentTab,
+      // ======================================================================
+      // BODY
+      // ======================================================================
+
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) {
+          if (_currentTab != index) {
+            setState(() {
+              _currentTab = index;
+            });
+          }
+        },
         children: [
           _buildStatusesTab(),
+
           _buildSavedTab(),
+
+          SettingsScreen(
+            statusService: _statusService,
+            whatsappInstalled: _whatsappInstalled,
+            businessInstalled: _businessInstalled,
+            whatsappConfigured: _whatsappConfigured,
+            businessConfigured: _businessConfigured,
+            onSelectSource: _selectSource,
+            onOpenWhatsApp: _openWhatsApp,
+          ),
         ],
       ),
+
+      // ======================================================================
+      // BOTTOM NAVIGATION
+      // ======================================================================
 
       bottomNavigationBar:
       NavigationBar(
-        selectedIndex:
-        _currentTab,
-        onDestinationSelected:
-        _changeTab,
-        destinations: const [
+        selectedIndex: _currentTab,
+        onDestinationSelected: _changeTab,
+        destinations: [
           NavigationDestination(
-            icon: Icon(
-              Icons
-                  .photo_library_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.photo_library,
+            icon: const StatusIcon(),
+            selectedIcon: const StatusIcon(
+              selected: true,
             ),
             label: 'Statuses',
           ),
+
           NavigationDestination(
-            icon: Icon(
+
+            icon: const Icon(
               Icons.download_outlined,
             ),
-            selectedIcon: Icon(
+            selectedIcon: const Icon(
               Icons.download,
             ),
             label: 'Saved',
+          ),
+
+          NavigationDestination(
+            icon: const Icon(
+              Icons.settings_outlined,
+            ),
+            selectedIcon: const Icon(
+              Icons.settings,
+            ),
+            label: 'Settings',
           ),
         ],
       ),
@@ -1517,39 +1607,144 @@ class _StatusHomePageState
   }
 }
 
+
+class StatusIcon extends StatelessWidget {
+  final bool selected;
+
+  const StatusIcon({
+    super.key,
+    this.selected = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: CustomPaint(
+        painter: _StatusIconPainter(),
+      ),
+    );
+  }
+}
+
+class _StatusIconPainter extends CustomPainter {
+  @override
+  void paint(
+      Canvas canvas,
+      Size size,
+      ) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(
+      size.width / 2,
+      size.height / 2,
+    );
+
+    // ========================================================
+    // OUTER BROKEN CHAT CIRCLE
+    // ========================================================
+
+    final outerRadius =
+        size.width * 0.40;
+
+    final outerRect = Rect.fromCircle(
+      center: center,
+      radius: outerRadius,
+    );
+
+    // Top section
+    canvas.drawArc(
+      outerRect,
+      -2.75,
+      1.35,
+      false,
+      paint,
+    );
+
+    // Right section
+    canvas.drawArc(
+      outerRect,
+      -1.05,
+      1.30,
+      false,
+      paint,
+    );
+
+    // Bottom section
+    canvas.drawArc(
+      outerRect,
+      0.65,
+      1.35,
+      false,
+      paint,
+    );
+
+    // Left section
+    canvas.drawArc(
+      outerRect,
+      2.35,
+      1.20,
+      false,
+      paint,
+    );
+
+    // ========================================================
+    // INNER NORMAL CIRCLE
+    // ========================================================
+
+    final innerRadius =
+        size.width * 0.19;
+
+    canvas.drawCircle(
+      center,
+      innerRadius,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+      covariant _StatusIconPainter oldDelegate,
+      ) {
+    return false;
+  }
+}
+
 // ============================================================================
 // STATUS THUMBNAIL
 // ============================================================================
 
-class StatusThumbnail
-    extends StatefulWidget {
+class StatusThumbnail extends StatefulWidget {
   final Map<String, dynamic> status;
+
   final Uint8List? cachedBytes;
-  final ValueChanged<Uint8List>
-  onLoaded;
+
+  final ValueChanged<Uint8List> onLoaded;
+
+  final StatusService statusService;
 
   const StatusThumbnail({
     super.key,
     required this.status,
     required this.cachedBytes,
     required this.onLoaded,
+    required this.statusService,
   });
 
   @override
-  State<StatusThumbnail>
-  createState() =>
+  State<StatusThumbnail> createState() =>
       _StatusThumbnailState();
 }
 
 class _StatusThumbnailState
     extends State<StatusThumbnail> {
-  static const MethodChannel
-  _channel =
-  MethodChannel(
-    'com.example.status_saver/status',
-  );
-
   Uint8List? _thumbnail;
+
   bool _loading = true;
 
   @override
@@ -1568,8 +1763,7 @@ class _StatusThumbnailState
 
   @override
   void didUpdateWidget(
-      covariant StatusThumbnail
-      oldWidget,
+      covariant StatusThumbnail oldWidget,
       ) {
     super.didUpdateWidget(
       oldWidget,
@@ -1593,26 +1787,41 @@ class _StatusThumbnailState
       if (_thumbnail == null) {
         _loadThumbnail();
       }
+    } else if (widget.cachedBytes != null &&
+        widget.cachedBytes != _thumbnail) {
+      setState(() {
+        _thumbnail =
+            widget.cachedBytes;
+        _loading = false;
+      });
     }
   }
 
-  Future<void>
-  _loadThumbnail() async {
+  Future<void> _loadThumbnail() async {
     try {
+      final uri =
+      widget.status['uri']
+          ?.toString();
+
+      if (uri == null ||
+          uri.isEmpty) {
+        if (!mounted) return;
+
+        setState(() {
+          _loading = false;
+        });
+
+        return;
+      }
+
       final bytes =
-      await _channel
-          .invokeMethod<
-          Uint8List>(
-        'getThumbnail',
-        {
-          'uri':
-          widget.status['uri'],
-        },
-      );
+      await widget.statusService
+          .getThumbnail(uri);
 
       if (!mounted) return;
 
-      if (bytes != null) {
+      if (bytes != null &&
+          bytes.isNotEmpty) {
         widget.onLoaded(bytes);
 
         setState(() {
@@ -1629,18 +1838,16 @@ class _StatusThumbnailState
         'Thumbnail error: $e',
       );
 
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     if (_thumbnail != null) {
       return Image.memory(
         _thumbnail!,
@@ -1659,13 +1866,13 @@ class _StatusThumbnailState
           child:
           CircularProgressIndicator(
             strokeWidth: 2,
+            color:
+            AppColors.primaryDark,
           ),
         )
             : Icon(
-          Icons
-              .broken_image_outlined,
-          color:
-          Colors.grey.shade500,
+          Icons.broken_image_outlined,
+          color: Colors.grey.shade500,
           size: 36,
         ),
       ),
