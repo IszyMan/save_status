@@ -3,6 +3,7 @@ package com.example.status_saver
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
@@ -135,7 +136,7 @@ class MainActivity : FlutterActivity() {
                     val source = call.argument<String>("source")
 
                     val packageName = when (source) {
-                        "WhatsApp Business" -> "com.whatsapp.w4b"
+                        "business", "WhatsApp Business" -> "com.whatsapp.w4b"
                         else -> "com.whatsapp"
                     }
 
@@ -155,11 +156,8 @@ class MainActivity : FlutterActivity() {
                 // =====================================================
 
                 "selectStatusFolder" -> {
-
                     val source =
-                        call.argument<String>(
-                            "source"
-                        ) ?: "whatsapp"
+                        call.argument<String>("source") ?: "whatsapp"
 
                     if (
                         source != "whatsapp" &&
@@ -170,26 +168,89 @@ class MainActivity : FlutterActivity() {
                             "Invalid WhatsApp source",
                             null
                         )
-
                         return@setMethodCallHandler
                     }
 
-                    folderPickerResult =
-                        result
-
-                    folderPickerSource =
-                        source
+                    folderPickerResult = result
+                    folderPickerSource = source
 
                     val intent =
-                        Intent(
-                            Intent.ACTION_OPEN_DOCUMENT_TREE
+                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+
+                    val preferences =
+                        getSharedPreferences(
+                            "status_saver",
+                            MODE_PRIVATE
                         )
+
+                    val preferenceKey =
+                        if (source == "business") {
+                            "whatsapp_business_status_folder_uri"
+                        } else {
+                            "whatsapp_status_folder_uri"
+                        }
+
+                    val storedUriString =
+                        preferences.getString(
+                            preferenceKey,
+                            null
+                        )
+
+                    val initialUri: Uri?
+
+                    if (!storedUriString.isNullOrEmpty()) {
+                        initialUri = try {
+                            Uri.parse(storedUriString)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    } else {
+                        val mediaPath =
+                            if (source == "business") {
+                                "Android/media/com.whatsapp.w4b/WhatsApp Business/Media"
+                            } else {
+                                "Android/media/com.whatsapp/WhatsApp/Media"
+                            }
+
+                        val documentId =
+                            "primary:$mediaPath"
+
+                        initialUri =
+                            try {
+                                DocumentsContract.buildTreeDocumentUri(
+                                    "com.android.externalstorage.documents",
+                                    documentId
+                                )
+                            } catch (e: Exception) {
+                                Log.e(
+                                    "STATUS_DEBUG",
+                                    "Failed to build initial URI for $source",
+                                    e
+                                )
+                                null
+                            }
+                    }
+
+                    if (
+                        Build.VERSION.SDK_INT >=
+                        Build.VERSION_CODES.O &&
+                        initialUri != null
+                    ) {
+                        intent.putExtra(
+                            DocumentsContract.EXTRA_INITIAL_URI,
+                            initialUri
+                        )
+                    }
 
                     intent.addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
                                 Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+                    )
+
+                    Log.d(
+                        "STATUS_DEBUG",
+                        "Opening folder picker. source=$source initialUri=$initialUri"
                     )
 
                     startActivityForResult(
@@ -850,13 +911,7 @@ class MainActivity : FlutterActivity() {
 
     private fun getStatusesFromWhatsApp(
         source: String
-    ): List<Map<String, String>> {
-
-        val preferences =
-            getSharedPreferences(
-                "status_saver",
-                MODE_PRIVATE
-            )
+    ): List<Map<String, Any?>> {
 
         val preferenceKey =
             if (source == "business") {
@@ -865,158 +920,191 @@ class MainActivity : FlutterActivity() {
                 "whatsapp_status_folder_uri"
             }
 
-        val uriString =
-            preferences.getString(
+        val storedUriString =
+            getSharedPreferences(
+                "status_saver",
+                MODE_PRIVATE
+            ).getString(
                 preferenceKey,
                 null
-            )
+            ) ?: return emptyList()
 
-        if (uriString == null) {
+        val treeUri =
+            Uri.parse(storedUriString)
+
+        // ============================================================
+        // VERIFY THAT THIS IS THE CORRECT .STATUSES FOLDER
+        // ============================================================
+
+        val documentId =
+            try {
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+            } catch (e: Exception) {
+                return emptyList()
+            }
+
+        val decodedDocumentId =
+            Uri.decode(
+                documentId
+            )
+                .replace("\\", "/")
+                .lowercase()
+
+        val isCorrectStatusesFolder =
+            if (source == "business") {
+
+                decodedDocumentId.contains(
+                    "android/media/com.whatsapp.w4b/"
+                ) &&
+                        decodedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+
+            } else {
+
+                decodedDocumentId.contains(
+                    "android/media/com.whatsapp/"
+                ) &&
+                        !decodedDocumentId.contains(
+                            "android/media/com.whatsapp.w4b/"
+                        ) &&
+                        decodedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+            }
+
+        if (!isCorrectStatusesFolder) {
             return emptyList()
         }
 
-        val treeUri =
-            Uri.parse(uriString)
-
-        val statuses =
-            mutableListOf<
-                    Map<String, String>
-                    >()
+        // ============================================================
+        // QUERY ONLY THE CHILDREN OF THE AUTHORIZED .STATUSES FOLDER
+        // ============================================================
 
         val childrenUri =
-            DocumentsContract
-                .buildChildDocumentsUriUsingTree(
-                    treeUri,
-                    DocumentsContract
-                        .getTreeDocumentId(
-                            treeUri
-                        )
-                )
+            try {
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        documentId
+                    )
+            } catch (e: Exception) {
+                return emptyList()
+            }
+
+        val results =
+            mutableListOf<Map<String, Any?>>()
 
         val projection =
             arrayOf(
-                DocumentsContract
-                    .Document
-                    .COLUMN_DOCUMENT_ID,
-
-                DocumentsContract
-                    .Document
-                    .COLUMN_DISPLAY_NAME,
-
-                DocumentsContract
-                    .Document
-                    .COLUMN_MIME_TYPE,
-
-                DocumentsContract
-                    .Document
-                    .COLUMN_LAST_MODIFIED
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED
             )
 
-        contentResolver.query(
-            childrenUri,
-            projection,
-            null,
-            null,
-            "${DocumentsContract.Document.COLUMN_LAST_MODIFIED} DESC"
-        )?.use { cursor ->
+        try {
 
-            val idColumn =
-                cursor.getColumnIndex(
-                    DocumentsContract
-                        .Document
-                        .COLUMN_DOCUMENT_ID
-                )
+            contentResolver.query(
+                childrenUri,
+                projection,
+                null,
+                null,
+                "${DocumentsContract.Document.COLUMN_LAST_MODIFIED} DESC"
+            )?.use { cursor ->
 
-            val nameColumn =
-                cursor.getColumnIndex(
-                    DocumentsContract
-                        .Document
-                        .COLUMN_DISPLAY_NAME
-                )
-
-            val mimeColumn =
-                cursor.getColumnIndex(
-                    DocumentsContract
-                        .Document
-                        .COLUMN_MIME_TYPE
-                )
-
-            val modifiedColumn =
-                cursor.getColumnIndex(
-                    DocumentsContract
-                        .Document
-                        .COLUMN_LAST_MODIFIED
-                )
-
-            while (cursor.moveToNext()) {
-
-                val documentId =
-                    cursor.getString(
-                        idColumn
+                val documentIdIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
                     )
 
-                val name =
-                    cursor.getString(
-                        nameColumn
+                val displayNameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
                     )
 
-                val mimeType =
-                    cursor.getString(
-                        mimeColumn
+                val mimeTypeIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_MIME_TYPE
                     )
 
-                val lastModified =
+                val lastModifiedIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED
+                    )
+
+                while (cursor.moveToNext()) {
+
                     if (
-                        modifiedColumn >= 0 &&
-                        !cursor.isNull(
-                            modifiedColumn
-                        )
+                        documentIdIndex < 0 ||
+                        displayNameIndex < 0 ||
+                        mimeTypeIndex < 0
                     ) {
-                        cursor.getLong(
-                            modifiedColumn
-                        ).toString()
-                    } else {
-                        "0"
+                        continue
                     }
 
-                if (
-                    mimeType.startsWith(
-                        "image/"
-                    ) ||
-                    mimeType.startsWith(
-                        "video/"
-                    )
-                ) {
+                    val childDocumentId =
+                        cursor.getString(
+                            documentIdIndex
+                        )
+
+                    val displayName =
+                        cursor.getString(
+                            displayNameIndex
+                        ) ?: continue
+
+                    val mimeType =
+                        cursor.getString(
+                            mimeTypeIndex
+                        ) ?: continue
+
+                    val lastModified =
+                        if (lastModifiedIndex >= 0) {
+                            cursor.getLong(
+                                lastModifiedIndex
+                            )
+                        } else {
+                            0L
+                        }
+
+                    // Only images and videos.
+                    if (
+                        !mimeType.startsWith("image/") &&
+                        !mimeType.startsWith("video/")
+                    ) {
+                        continue
+                    }
 
                     val documentUri =
                         DocumentsContract
                             .buildDocumentUriUsingTree(
                                 treeUri,
-                                documentId
+                                childDocumentId
                             )
 
-                    statuses.add(
+                    results.add(
                         mapOf(
-                            "name" to name,
-                            "uri" to
-                                    documentUri.toString(),
-                            "mimeType" to
-                                    mimeType,
-                            "lastModified" to
-                                    lastModified
+                            "name" to displayName,
+                            "uri" to documentUri.toString(),
+                            "mimeType" to mimeType,
+                            "lastModified" to lastModified
                         )
                     )
                 }
             }
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "STATUS_DEBUG",
+                "Unable to load WhatsApp statuses",
+                e
+            )
         }
 
-        statuses.sortByDescending {
-            it["lastModified"]
-                ?.toLongOrNull()
-                ?: 0L
-        }
-
-        return statuses
+        return results
     }
 
     // =============================================================
@@ -1758,17 +1846,13 @@ class MainActivity : FlutterActivity() {
         resultCode: Int,
         data: Intent?
     ) {
-
         super.onActivityResult(
             requestCode,
             resultCode,
             data
         )
 
-        if (
-            requestCode !=
-            FOLDER_PICKER_REQUEST
-        ) {
+        if (requestCode != FOLDER_PICKER_REQUEST) {
             return
         }
 
@@ -1781,24 +1865,34 @@ class MainActivity : FlutterActivity() {
         folderPickerResult = null
         folderPickerSource = null
 
-        if (
-            resultCode !=
-            Activity.RESULT_OK ||
-            data == null
-        ) {
+        if (result == null) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Folder picker returned but MethodChannel result was null"
+            )
+            return
+        }
 
-            result?.success(false)
+        if (resultCode != Activity.RESULT_OK) {
+            Log.d(
+                "STATUS_DEBUG",
+                "Folder picker cancelled. source=$source"
+            )
 
+            result.success(false)
             return
         }
 
         val treeUri =
-            data.data
+            data?.data
 
         if (treeUri == null) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Folder picker returned RESULT_OK but URI was null"
+            )
 
-            result?.success(false)
-
+            result.success(false)
             return
         }
 
@@ -1806,97 +1900,150 @@ class MainActivity : FlutterActivity() {
             source != "whatsapp" &&
             source != "business"
         ) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Invalid folder picker source: $source"
+            )
 
-            result?.success(false)
-
+            result.success(false)
             return
         }
 
-        // =========================================================
-        // VERIFY .STATUSES
-        // =========================================================
+        Log.d(
+            "STATUS_DEBUG",
+            "Selected folder. source=$source uri=$treeUri"
+        )
 
-        val folderName =
-            getDocumentDisplayName(
-                treeUri
-            )
+        val displayName =
+            try {
+                DocumentsContract.getTreeDocumentId(treeUri)
+                    .substringAfterLast("/")
+                    .substringAfterLast(":")
+            } catch (e: Exception) {
+                ""
+            }
 
         if (
-            folderName == null ||
-            !folderName.equals(
+            !displayName.equals(
                 ".Statuses",
                 ignoreCase = true
             )
         ) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Rejected folder because it is not .Statuses. source=$source uri=$treeUri"
+            )
 
-            result?.success(false)
-
+            result.success(false)
             return
         }
 
-        // =========================================================
-        // PERSIST PERMISSION
-        // =========================================================
-
-        try {
-
-            contentResolver
-                .takePersistableUriPermission(
-                    treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val documentId =
+            try {
+                DocumentsContract.getTreeDocumentId(treeUri)
+            } catch (e: Exception) {
+                Log.e(
+                    "STATUS_DEBUG",
+                    "Could not read tree document ID",
+                    e
                 )
 
-        } catch (
-            e: SecurityException
-        ) {
+                result.success(false)
+                return
+            }
 
-            e.printStackTrace()
+        val normalizedDocumentId =
+            documentId
+                .replace("\\", "/")
+                .lowercase()
+
+        val isCorrectSource =
+            if (source == "business") {
+                normalizedDocumentId.contains(
+                    "android/media/com.whatsapp.w4b/"
+                ) &&
+                        normalizedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+            } else {
+                normalizedDocumentId.contains(
+                    "android/media/com.whatsapp/"
+                ) &&
+                        !normalizedDocumentId.contains(
+                            "android/media/com.whatsapp.w4b/"
+                        ) &&
+                        normalizedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+            }
+
+        if (!isCorrectSource) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Rejected wrong source folder. source=$source documentId=$documentId"
+            )
+
+            result.success(false)
+            return
         }
 
-        // =========================================================
-        // SOURCE-SPECIFIC STORAGE
-        // =========================================================
+        try {
+            val takeFlags =
+                data.flags and
+                        (
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                )
+
+            contentResolver.takePersistableUriPermission(
+                treeUri,
+                takeFlags and
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (e: Exception) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Could not persist folder permission. source=$source uri=$treeUri",
+                e
+            )
+
+            result.success(false)
+            return
+        }
+
+        val preferences =
+            getSharedPreferences(
+                "status_saver",
+                MODE_PRIVATE
+            )
 
         val preferenceKey =
-            if (
-                source == "business"
-            ) {
-
+            if (source == "business") {
                 "whatsapp_business_status_folder_uri"
-
             } else {
-
                 "whatsapp_status_folder_uri"
             }
 
-        getSharedPreferences(
-            "status_saver",
-            MODE_PRIVATE
-        )
+        preferences
             .edit()
             .putString(
                 preferenceKey,
                 treeUri.toString()
             )
-            .apply()
-
-        // =========================================================
-        // REMEMBER SOURCE
-        // =========================================================
-
-        getSharedPreferences(
-            "status_saver",
-            MODE_PRIVATE
-        )
-            .edit()
             .putString(
                 "last_selected_source",
                 source
             )
             .apply()
 
-        result?.success(true)
+        Log.d(
+            "STATUS_DEBUG",
+            "Saved folder successfully. source=$source key=$preferenceKey uri=$treeUri"
+        )
+
+        logPersistedUriPermissions()
+
+        result.success(true)
     }
 
     // =============================================================
@@ -1933,30 +2080,141 @@ class MainActivity : FlutterActivity() {
     private fun hasStoredFolder(
         source: String
     ): Boolean {
-
-        val key =
-            if (
-                source == "business"
-            ) {
-
-                "whatsapp_business_status_folder_uri"
-
-            } else {
-
-                "whatsapp_status_folder_uri"
-            }
-
-        val uri =
+        val preferences =
             getSharedPreferences(
                 "status_saver",
                 MODE_PRIVATE
             )
-                .getString(
-                    key,
-                    null
-                )
 
-        return !uri.isNullOrEmpty()
+        val preferenceKey =
+            if (source == "business") {
+                "whatsapp_business_status_folder_uri"
+            } else {
+                "whatsapp_status_folder_uri"
+            }
+
+        val uriString =
+            preferences.getString(
+                preferenceKey,
+                null
+            )
+
+        if (uriString.isNullOrEmpty()) {
+            Log.d(
+                "STATUS_DEBUG",
+                "No stored folder for source=$source"
+            )
+            return false
+        }
+
+        val treeUri =
+            try {
+                Uri.parse(uriString)
+            } catch (e: Exception) {
+                Log.e(
+                    "STATUS_DEBUG",
+                    "Invalid stored URI for source=$source",
+                    e
+                )
+                return false
+            }
+
+        val hasPersistedPermission =
+            contentResolver.persistedUriPermissions.any {
+                it.uri == treeUri &&
+                        it.isReadPermission
+            }
+
+        if (!hasPersistedPermission) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Stored URI has no persisted read permission. " +
+                        "source=$source uri=$treeUri"
+            )
+            return false
+        }
+
+        val documentId =
+            try {
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+            } catch (e: Exception) {
+                Log.e(
+                    "STATUS_DEBUG",
+                    "Could not read stored document ID for source=$source",
+                    e
+                )
+                return false
+            }
+
+        val normalizedDocumentId =
+            documentId
+                .replace("\\", "/")
+                .lowercase()
+
+        val correctPath =
+            if (source == "business") {
+                normalizedDocumentId.contains(
+                    "android/media/com.whatsapp.w4b/"
+                ) &&
+                        normalizedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+            } else {
+                normalizedDocumentId.contains(
+                    "android/media/com.whatsapp/"
+                ) &&
+                        !normalizedDocumentId.contains(
+                            "android/media/com.whatsapp.w4b/"
+                        ) &&
+                        normalizedDocumentId.endsWith(
+                            "/.statuses"
+                        )
+            }
+
+        if (!correctPath) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Stored folder has wrong path. " +
+                        "source=$source documentId=$documentId"
+            )
+            return false
+        }
+
+        Log.d(
+            "STATUS_DEBUG",
+            "Stored folder is valid. " +
+                    "source=$source uri=$treeUri"
+        )
+
+        return true
+    }
+
+
+
+
+
+    private fun logPersistedUriPermissions() {
+        try {
+            val permissions =
+                contentResolver.persistedUriPermissions
+
+            for (permission in permissions) {
+                Log.d(
+                    "STATUS_DEBUG",
+                    "Persisted URI: ${permission.uri} " +
+                            "read=${permission.isReadPermission} " +
+                            "write=${permission.isWritePermission}"
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Could not read persisted URI permissions",
+                e
+            )
+        }
     }
 
     // =============================================================

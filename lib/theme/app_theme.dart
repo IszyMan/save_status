@@ -8,7 +8,7 @@ class AppColors {
   // ============================================================
 
   // Main WhatsApp green
-  static const Color primary = Color(0xFF25D366);
+  static const Color primary = Color(0xFF04AF46);
 
   // Dark WhatsApp green
   static const Color primaryDark = Color(0xFF075E54);
@@ -177,7 +177,7 @@ class AppTheme {
         AppColors.surface,
 
         selectedColor:
-        AppColors.primaryDark,
+        AppColors.primary,
 
         disabledColor:
         AppColors.divider,

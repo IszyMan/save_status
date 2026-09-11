@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StatusService {
   static const MethodChannel _channel =
@@ -98,5 +99,48 @@ class StatusService {
     );
 
     return result == true;
+  }
+
+
+  Future<Set<String>> getOpenedStatusUris(
+      String source,
+      ) async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    final key =
+    source == 'business'
+        ? 'opened_statuses_business'
+        : 'opened_statuses_whatsapp';
+
+    final values =
+        preferences.getStringList(key) ?? [];
+
+    return values.toSet();
+  }
+
+  Future<void> markStatusOpened({
+    required String source,
+    required String uri,
+  }) async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    final key =
+    source == 'business'
+        ? 'opened_statuses_business'
+        : 'opened_statuses_whatsapp';
+
+    final values =
+        preferences.getStringList(key) ?? [];
+
+    if (!values.contains(uri)) {
+      values.add(uri);
+
+      await preferences.setStringList(
+        key,
+        values,
+      );
+    }
   }
 }

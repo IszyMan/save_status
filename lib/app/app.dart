@@ -8,7 +8,9 @@ import '../screens/settings.dart';
 import '../screens/splash_screen.dart';
 import '../services/status_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/media_filter_bar.dart';
 import 'view.dart';
+import 'package:flutter/services.dart';
 
 class StatusSaverApp extends StatelessWidget {
   const StatusSaverApp({super.key});
@@ -29,6 +31,7 @@ class StatusSaverApp extends StatelessWidget {
 // ============================================================================
 // APP STARTUP
 // ============================================================================
+
 
 class AppStartupScreen extends StatefulWidget {
   const AppStartupScreen({super.key});
@@ -54,10 +57,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       await SharedPreferences.getInstance();
 
       final completed =
-          preferences.getBool(
-            'onboarding_completed',
-          ) ??
-              false;
+          preferences.getBool('onboarding_completed') ?? false;
 
       if (!mounted) return;
 
@@ -97,44 +97,15 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (
-            context,
-            animation,
-            secondaryAnimation,
-            ) {
-          return const StatusHomePage();
-        },
-        transitionDuration: const Duration(
-          milliseconds: 350,
-        ),
-        transitionsBuilder: (
-            context,
-            animation,
-            secondaryAnimation,
-            child,
-            ) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
+      MaterialPageRoute(
+        builder: (_) => const StatusHomePage(),
       ),
     );
   }
 
-  Widget _getNextScreen() {
-    if (!_onboardingCompleted) {
-      return OnboardingScreen(
-        onGetStarted: _completeOnboarding,
-      );
-    }
-
-    return const StatusHomePage();
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Still checking SharedPreferences.
     if (_checking) {
       return const Scaffold(
         backgroundColor: Color(0xFF075E54),
@@ -144,8 +115,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              valueColor:
-              AlwaysStoppedAnimation<Color>(
+              valueColor: AlwaysStoppedAnimation<Color>(
                 Color(0xFF25D366),
               ),
             ),
@@ -154,8 +124,21 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       );
     }
 
-    return SplashScreen(
-      nextScreen: _getNextScreen(),
+    // First launch:
+    // Show onboarding directly.
+    //
+    // IMPORTANT:
+    // Do NOT put onboarding inside SplashScreen.
+    if (!_onboardingCompleted) {
+      return OnboardingScreen(
+        onGetStarted: _completeOnboarding,
+      );
+    }
+
+    // Returning user:
+    // Show splash, then go to StatusHomePage.
+    return const SplashScreen(
+      nextScreen: StatusHomePage(),
     );
   }
 }
@@ -177,8 +160,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
   // APP STATE
   // ==========================================================================
-
-  bool _loading = true;
 
   bool _whatsappInstalled = false;
   bool _businessInstalled = false;
@@ -207,6 +188,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
   bool _loadingSaved = false;
 
   final Map<String, Uint8List> _thumbnailCache = {};
+
+  // Statuses that the user has already opened inside Statusly.
+  final Set<String> _openedStatusUris = {};
 
   // ==========================================================================
   // INIT
@@ -257,12 +241,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       debugPrint(
         'Unable to load app state: $e',
       );
-    } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-      });
     }
   }
 
@@ -271,9 +249,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _selectInitialSource() async {
-    final installedSources = _installedSources;
+    final configuredSources = _configuredSources;
 
-    if (installedSources.isEmpty) {
+    if (configuredSources.isEmpty) {
       if (!mounted) return;
 
       setState(() {
@@ -283,9 +261,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return;
     }
 
+    // Prefer the source the user selected last,
+    // but only if it is still installed and configured.
     if (_lastSelectedSource != null &&
-        installedSources.contains(_lastSelectedSource) &&
-        _isConfigured(_lastSelectedSource!)) {
+        configuredSources.contains(_lastSelectedSource)) {
       if (!mounted) return;
 
       setState(() {
@@ -299,25 +278,16 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return;
     }
 
-    for (final source in installedSources) {
-      if (_isConfigured(source)) {
-        if (!mounted) return;
-
-        setState(() {
-          _selectedSource = source;
-        });
-
-        await _loadStatuses(source);
-
-        return;
-      }
-    }
+    // Otherwise use the first configured source.
+    final source = configuredSources.first;
 
     if (!mounted) return;
 
     setState(() {
-      _selectedSource = installedSources.first;
+      _selectedSource = source;
     });
+
+    await _loadStatuses(source);
   }
 
   // ==========================================================================
@@ -352,6 +322,23 @@ class _StatusHomePageState extends State<StatusHomePage> {
     }
 
     return 'WhatsApp';
+  }
+
+
+  List<String> get _configuredSources {
+    final sources = <String>[];
+
+    if (_whatsappInstalled &&
+        _whatsappConfigured) {
+      sources.add('whatsapp');
+    }
+
+    if (_businessInstalled &&
+        _businessConfigured) {
+      sources.add('business');
+    }
+
+    return sources;
   }
 
   // ==========================================================================
@@ -470,7 +457,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
     }
 
     try {
-      final statuses = await _statusService.getStatuses(
+      final statuses =
+      await _statusService.getStatuses(
         source,
       );
 
@@ -490,10 +478,19 @@ class _StatusHomePageState extends State<StatusHomePage> {
         },
       );
 
+      final openedUris =
+      await _statusService.getOpenedStatusUris(
+        source,
+      );
+
       if (!mounted) return;
 
       setState(() {
         _statuses = statuses;
+
+        _openedStatusUris
+          ..clear()
+          ..addAll(openedUris);
       });
     } catch (e) {
       debugPrint(
@@ -546,8 +543,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _selectSource(String source) async {
-    if (!_isConfigured(source)) {
-      await _setupSource(source);
+    if (!_configuredSources.contains(source)) {
       return;
     }
 
@@ -569,6 +565,16 @@ class _StatusHomePageState extends State<StatusHomePage> {
     }
 
     await _loadStatuses(source);
+  }
+
+
+  Future<void> _handleSettingsSource(String source) async {
+    if (_isConfigured(source)) {
+      await _selectSource(source);
+      return;
+    }
+
+    await _setupSource(source);
   }
 
   // ==========================================================================
@@ -663,6 +669,24 @@ class _StatusHomePageState extends State<StatusHomePage> {
         name.endsWith('.mov');
   }
 
+
+  // ==========================================================================
+  // STATUS OPENED CHECK
+  // ==========================================================================
+
+  bool _isStatusNew(
+      Map<String, dynamic> status,
+      ) {
+    final uri =
+        status['uri']?.toString() ?? '';
+
+    if (uri.isEmpty) {
+      return false;
+    }
+
+    return !_openedStatusUris.contains(uri);
+  }
+
   // ==========================================================================
   // OPEN STATUS
   // ==========================================================================
@@ -681,6 +705,30 @@ class _StatusHomePageState extends State<StatusHomePage> {
         throw Exception(
           'Unable to prepare status',
         );
+      }
+
+      final source = _selectedSource;
+
+      if (source == null) {
+        throw Exception(
+          'No WhatsApp source selected',
+        );
+      }
+
+      final uri =
+          status['uri']?.toString() ?? '';
+
+      if (uri.isNotEmpty) {
+        await _statusService.markStatusOpened(
+          source: source,
+          uri: uri,
+        );
+
+        if (mounted) {
+          setState(() {
+            _openedStatusUris.add(uri);
+          });
+        }
       }
 
       if (!mounted) return;
@@ -971,12 +1019,16 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
   Widget _buildSourceSelector() {
     final source = _selectedSource;
+    final configuredSources = _configuredSources;
 
-    if (source == null) {
+    if (source == null ||
+        !configuredSources.contains(source)) {
       return const SizedBox.shrink();
     }
 
-    if (_installedSources.length == 1) {
+    // Only one configured source.
+    // Show its name without a dropdown.
+    if (configuredSources.length == 1) {
       return Padding(
         padding: const EdgeInsets.only(
           right: 4,
@@ -994,6 +1046,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
       );
     }
 
+    // Two configured sources.
+    // Show the dropdown.
     return Padding(
       padding: const EdgeInsets.only(
         right: 4,
@@ -1001,11 +1055,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
       child: PopupMenuButton<String>(
         onSelected: _selectSource,
         itemBuilder: (context) {
-          return _installedSources.map(
+          return configuredSources.map(
                 (item) {
-              final configured =
-              _isConfigured(item);
-
               final selected =
                   item == _selectedSource;
 
@@ -1013,10 +1064,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 value: item,
                 child: Row(
                   children: [
-                    Icon(
-                      configured
-                          ? Icons.chat_rounded
-                          : Icons.settings_outlined,
+                    const Icon(
+                      Icons.chat_rounded,
                       size: 20,
                       color: AppColors.primaryDark,
                     ),
@@ -1035,8 +1084,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                       const Icon(
                         Icons.check,
                         size: 20,
-                        color:
-                        AppColors.primaryDark,
+                        color: AppColors.primaryDark,
                       ),
                   ],
                 ),
@@ -1081,65 +1129,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
-  // ==========================================================================
-  // FILTER BAR
-  // ==========================================================================
 
-  Widget _buildFilterBar({
-    required String selectedFilter,
-    required ValueChanged<String> onChanged,
-  }) {
-    const filters = [
-      ('images', 'Images'),
-      ('videos', 'Videos'),
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-      ),
-      child: Row(
-        children: filters.map(
-              (item) {
-            final selected =
-                selectedFilter == item.$1;
-
-            return Padding(
-              padding:
-              const EdgeInsets.only(
-                right: 8,
-              ),
-              child: ChoiceChip(
-                label: Text(item.$2),
-                selected: selected,
-                onSelected: (_) {
-                  onChanged(item.$1);
-                },
-                selectedColor:
-                AppColors.primaryDark,
-                backgroundColor:
-                AppColors.surface,
-                labelStyle: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : AppColors.textPrimary,
-                  fontWeight:
-                  FontWeight.w600,
-                ),
-                side: BorderSide(
-                  color: selected
-                      ? AppColors.primaryDark
-                      : AppColors.divider,
-                ),
-                showCheckmark: false,
-              ),
-            );
-          },
-        ).toList(),
-      ),
-    );
-  }
 
   // ==========================================================================
   // MEDIA GRID
@@ -1388,20 +1378,36 @@ class _StatusHomePageState extends State<StatusHomePage> {
     final showingVideos =
         _statusFilter == 'videos';
 
+    final newStatuses =
+    _statuses.where(_isStatusNew).toList();
+
+    final imagesCount =
+        _filterMedia(
+          newStatuses,
+          'images',
+        ).length;
+
+    final videosCount =
+        _filterMedia(
+          newStatuses,
+          'videos',
+        ).length;
+
     return Column(
       children: [
         const SizedBox(
           height: 8,
         ),
 
-        _buildFilterBar(
-          selectedFilter:
-          _statusFilter,
+        MediaFilterBar(
+          selectedFilter: _statusFilter,
           onChanged: (value) {
             setState(() {
               _statusFilter = value;
             });
           },
+          imagesCount: imagesCount,
+          videosCount: videosCount,
         ),
 
         const SizedBox(
@@ -1437,20 +1443,27 @@ class _StatusHomePageState extends State<StatusHomePage> {
     final showingVideos =
         _savedFilter == 'videos';
 
+    final imagesCount =
+        _filterMedia(_savedStatuses, 'images').length;
+
+    final videosCount =
+        _filterMedia(_savedStatuses, 'videos').length;
+
     return Column(
       children: [
         const SizedBox(
           height: 8,
         ),
 
-        _buildFilterBar(
-          selectedFilter:
-          _savedFilter,
+        MediaFilterBar(
+          selectedFilter: _savedFilter,
           onChanged: (value) {
             setState(() {
               _savedFilter = value;
             });
           },
+          imagesCount: imagesCount,
+          videosCount: videosCount,
         ),
 
         const SizedBox(
@@ -1459,12 +1472,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
         Expanded(
           child: _buildMediaGrid(
-            items:
-            _filteredSavedStatuses,
-            loading:
-            _loadingSaved,
-            onRefresh:
-            _loadSavedStatuses,
+            items: _filteredSavedStatuses,
+            loading: _loadingSaved,
+            onRefresh: _loadSavedStatuses,
             emptyTitle: showingVideos
                 ? 'No saved videos'
                 : 'No saved images',
@@ -1477,21 +1487,49 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
+
+  Future<bool> _confirmExit() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Exit Statusly?',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to close the app?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return shouldExit ?? false;
+  }
+
   // ==========================================================================
   // BUILD
   // ==========================================================================
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primaryDark,
-          ),
-        ),
-      );
-    }
+
 
     final showingStatuses =
         _currentTab == 0;
@@ -1499,109 +1537,122 @@ class _StatusHomePageState extends State<StatusHomePage> {
     final showingSaved =
         _currentTab == 1;
 
-    return Scaffold(
-      // ======================================================================
-      // APP BAR
-      // ======================================================================
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
 
-      appBar: AppBar(
-        title: Text(
-          showingStatuses
-              ? 'Statusly'
-              : showingSaved
-              ? 'Saved'
-              : 'Settings',
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
+        final shouldExit = await _confirmExit();
+
+        if (shouldExit) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        // ======================================================================
+        // APP BAR
+        // ======================================================================
+
+        appBar: AppBar(
+          title: Text(
+            showingStatuses
+                ? 'Statusly'
+                : showingSaved
+                ? 'Saved'
+                : 'Settings',
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+            ),
           ),
+          actions: [
+            if (showingStatuses)
+              _buildSourceSelector(),
+
+            IconButton(
+              tooltip: 'Open WhatsApp',
+              onPressed: _openWhatsApp,
+              icon: const Icon(
+                Icons.mark_chat_unread,
+              ),
+            ),
+
+            const SizedBox(
+              width: 4,
+            ),
+          ],
         ),
-        actions: [
-          if (showingStatuses)
-            _buildSourceSelector(),
 
-          IconButton(
-            tooltip: 'Open WhatsApp',
-            onPressed: _openWhatsApp,
-            icon: const Icon(
-              Icons.chat_rounded,
+        // ======================================================================
+        // BODY
+        // ======================================================================
+
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          onPageChanged: (index) {
+            if (_currentTab != index) {
+              setState(() {
+                _currentTab = index;
+              });
+            }
+          },
+          children: [
+            _buildStatusesTab(),
+
+            _buildSavedTab(),
+
+            SettingsScreen(
+              statusService: _statusService,
+              whatsappInstalled: _whatsappInstalled,
+              businessInstalled: _businessInstalled,
+              whatsappConfigured: _whatsappConfigured,
+              businessConfigured: _businessConfigured,
+              onSelectSource: _handleSettingsSource,
+              onOpenWhatsApp: _openWhatsApp,
             ),
-          ),
+          ],
+        ),
 
-          const SizedBox(
-            width: 4,
-          ),
-        ],
-      ),
+        // ======================================================================
+        // BOTTOM NAVIGATION
+        // ======================================================================
 
-      // ======================================================================
-      // BODY
-      // ======================================================================
-
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (index) {
-          if (_currentTab != index) {
-            setState(() {
-              _currentTab = index;
-            });
-          }
-        },
-        children: [
-          _buildStatusesTab(),
-
-          _buildSavedTab(),
-
-          SettingsScreen(
-            statusService: _statusService,
-            whatsappInstalled: _whatsappInstalled,
-            businessInstalled: _businessInstalled,
-            whatsappConfigured: _whatsappConfigured,
-            businessConfigured: _businessConfigured,
-            onSelectSource: _selectSource,
-            onOpenWhatsApp: _openWhatsApp,
-          ),
-        ],
-      ),
-
-      // ======================================================================
-      // BOTTOM NAVIGATION
-      // ======================================================================
-
-      bottomNavigationBar:
-      NavigationBar(
-        selectedIndex: _currentTab,
-        onDestinationSelected: _changeTab,
-        destinations: [
-          NavigationDestination(
-            icon: const StatusIcon(),
-            selectedIcon: const StatusIcon(
-              selected: true,
+        bottomNavigationBar:
+        NavigationBar(
+          selectedIndex: _currentTab,
+          onDestinationSelected: _changeTab,
+          destinations: [
+            NavigationDestination(
+              icon: const StatusIcon(),
+              selectedIcon: const StatusIcon(
+                selected: true,
+              ),
+              label: 'Statuses',
             ),
-            label: 'Statuses',
-          ),
 
-          NavigationDestination(
+            NavigationDestination(
+              icon: const Icon(
+                Icons.download_outlined,
+              ),
+              selectedIcon: const Icon(
+                Icons.download,
+              ),
+              label: 'Saved',
+            ),
 
-            icon: const Icon(
-              Icons.download_outlined,
+            NavigationDestination(
+              icon: const Icon(
+                Icons.settings_outlined,
+              ),
+              selectedIcon: const Icon(
+                Icons.settings,
+              ),
+              label: 'Settings',
             ),
-            selectedIcon: const Icon(
-              Icons.download,
-            ),
-            label: 'Saved',
-          ),
-
-          NavigationDestination(
-            icon: const Icon(
-              Icons.settings_outlined,
-            ),
-            selectedIcon: const Icon(
-              Icons.settings,
-            ),
-            label: 'Settings',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1751,8 +1802,7 @@ class _StatusThumbnailState
   void initState() {
     super.initState();
 
-    _thumbnail =
-        widget.cachedBytes;
+    _thumbnail = widget.cachedBytes;
 
     if (_thumbnail != null) {
       _loading = false;
@@ -1765,24 +1815,18 @@ class _StatusThumbnailState
   void didUpdateWidget(
       covariant StatusThumbnail oldWidget,
       ) {
-    super.didUpdateWidget(
-      oldWidget,
-    );
+    super.didUpdateWidget(oldWidget);
 
     final oldUri =
-    oldWidget.status['uri']
-        ?.toString();
+    oldWidget.status['uri']?.toString();
 
     final newUri =
-    widget.status['uri']
-        ?.toString();
+    widget.status['uri']?.toString();
 
     if (oldUri != newUri) {
-      _thumbnail =
-          widget.cachedBytes;
+      _thumbnail = widget.cachedBytes;
 
-      _loading =
-          _thumbnail == null;
+      _loading = _thumbnail == null;
 
       if (_thumbnail == null) {
         _loadThumbnail();
@@ -1790,8 +1834,7 @@ class _StatusThumbnailState
     } else if (widget.cachedBytes != null &&
         widget.cachedBytes != _thumbnail) {
       setState(() {
-        _thumbnail =
-            widget.cachedBytes;
+        _thumbnail = widget.cachedBytes;
         _loading = false;
       });
     }
@@ -1800,11 +1843,9 @@ class _StatusThumbnailState
   Future<void> _loadThumbnail() async {
     try {
       final uri =
-      widget.status['uri']
-          ?.toString();
+      widget.status['uri']?.toString();
 
-      if (uri == null ||
-          uri.isEmpty) {
+      if (uri == null || uri.isEmpty) {
         if (!mounted) return;
 
         setState(() {
@@ -1815,13 +1856,11 @@ class _StatusThumbnailState
       }
 
       final bytes =
-      await widget.statusService
-          .getThumbnail(uri);
+      await widget.statusService.getThumbnail(uri);
 
       if (!mounted) return;
 
-      if (bytes != null &&
-          bytes.isNotEmpty) {
+      if (bytes != null && bytes.isNotEmpty) {
         widget.onLoaded(bytes);
 
         setState(() {
@@ -1856,23 +1895,18 @@ class _StatusThumbnailState
       );
     }
 
+    if (_loading) {
+      return Container(
+        color: AppColors.surface,
+      );
+    }
+
     return Container(
-      color: Colors.grey.shade200,
-      child: Center(
-        child: _loading
-            ? const SizedBox(
-          width: 28,
-          height: 28,
-          child:
-          CircularProgressIndicator(
-            strokeWidth: 2,
-            color:
-            AppColors.primaryDark,
-          ),
-        )
-            : Icon(
+      color: AppColors.surface,
+      child: const Center(
+        child: Icon(
           Icons.broken_image_outlined,
-          color: Colors.grey.shade500,
+          color: AppColors.textSecondary,
           size: 36,
         ),
       ),

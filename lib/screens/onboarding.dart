@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OnboardingScreen extends StatelessWidget {
   final VoidCallback onGetStarted;
@@ -7,6 +8,29 @@ class OnboardingScreen extends StatelessWidget {
     super.key,
     required this.onGetStarted,
   });
+
+  static const String privacyPolicyUrl =
+      'https://iszyman.github.io/statusly-legal/privacy-policy.html';
+
+  static const String termsUrl =
+      'https://iszyman.github.io/statusly-legal/terms.html';
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched) {
+        debugPrint('Could not open URL: $url');
+      }
+    } catch (e) {
+      debugPrint('Error opening URL: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,19 +120,78 @@ class OnboardingScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              const Text(
-                'Simple • Fast • Private',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                  letterSpacing: 0.3,
-                ),
+              // Legal notice
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  const Text(
+                    'By continuing, you acknowledge our ',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.45,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      _openUrl(privacyPolicyUrl);
+                    },
+                    child: const Text(
+                      'Privacy Policy',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white70,
+                      ),
+                    ),
+                  ),
+
+                  const Text(
+                    ' and ',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.45,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      _openUrl(termsUrl);
+                    },
+                    child: const Text(
+                      'Terms & Conditions',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white70,
+                      ),
+                    ),
+                  ),
+
+                  const Text(
+                    '.',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
             ],
           ),
         ),
