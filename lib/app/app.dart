@@ -1141,6 +1141,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     required Future<void> Function() onRefresh,
     required String emptyTitle,
     required String emptyMessage,
+    bool showStatusInstructions = false,
   }) {
     if (items.isEmpty) {
       if (loading) {
@@ -1151,6 +1152,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
         onRefresh: onRefresh,
         title: emptyTitle,
         message: emptyMessage,
+        showStatusInstructions:
+        showStatusInstructions,
       );
     }
 
@@ -1307,24 +1310,35 @@ class _StatusHomePageState extends State<StatusHomePage> {
     required Future<void> Function() onRefresh,
     required String title,
     required String message,
+    bool showStatusInstructions = false,
   }) {
+    final isBusiness =
+        _selectedSource == 'business';
+
+    final whatsappName =
+    isBusiness
+        ? 'WhatsApp Business'
+        : 'WhatsApp';
+
     return RefreshIndicator(
       color: AppColors.primaryDark,
       onRefresh: onRefresh,
       child: ListView(
         physics:
         const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 32,
+        ),
         children: [
-          SizedBox(
-            height:
-            MediaQuery.of(context).size.height *
-                0.28,
+          const SizedBox(
+            height: 20,
           ),
 
-          const Icon(
+          Icon(
             Icons.photo_library_outlined,
-            size: 60,
-            color: AppColors.textSecondary,
+            size: 58,
+            color: AppColors.primary,
           ),
 
           const SizedBox(
@@ -1344,24 +1358,183 @@ class _StatusHomePageState extends State<StatusHomePage> {
             height: 8,
           ),
 
-          Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 40,
-            ),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.4,
             ),
           ),
+
+          if (showStatusInstructions) ...[
+            const SizedBox(
+              height: 28,
+            ),
+
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius:
+                BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.divider,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'How to save a status',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height: 18,
+                  ),
+
+                  _buildInstructionStep(
+                    number: '1',
+                    title:
+                    'View a status on $whatsappName',
+                    description:
+                    'Open $whatsappName and view the photo or video status you want to save.',
+                  ),
+
+                  const SizedBox(
+                    height: 18,
+                  ),
+
+                  _buildInstructionStep(
+                    number: '2',
+                    title:
+                    'Open Save Statusly',
+                    description:
+                    'Return to Save Statusly after viewing the status.',
+                  ),
+
+                  const SizedBox(
+                    height: 18,
+                  ),
+
+                  _buildInstructionStep(
+                    number: '3',
+                    title:
+                    'Save or download the status',
+                    description:
+                    'The viewed status will appear here. Open it and tap the Save or Download button.',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(
+              height: 22,
+            ),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _openWhatsApp,
+                icon: const Icon(
+                  Icons.open_in_new,
+                ),
+                label: Text(
+                  'Open $whatsappName',
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor:
+                  AppColors.primary,
+                  foregroundColor:
+                  Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(
+                    vertical: 14,
+                  ),
+                  shape:
+                  RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+
+
+  Widget _buildInstructionStep({
+    required String number,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            number,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+
+        const SizedBox(
+          width: 12,
+        ),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(
+                height: 4,
+              ),
+
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  
 
   // ==========================================================================
   // STATUSES TAB
@@ -1419,9 +1592,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             items: _filteredStatuses,
             loading: _loadingStatuses,
             onRefresh: () {
-              return _loadStatuses(
-                source,
-              );
+              return _loadStatuses(source);
             },
             emptyTitle: showingVideos
                 ? 'No videos found'
@@ -1429,6 +1600,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             emptyMessage: showingVideos
                 ? 'Video statuses will appear here.'
                 : 'Image statuses will appear here.',
+            showStatusInstructions: true,
           ),
         ),
       ],
@@ -1638,6 +1810,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
               ),
               selectedIcon: const Icon(
                 Icons.download,
+                  size: 37,
               ),
               label: 'Saved',
             ),

@@ -26,8 +26,11 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL =
         "com.example.status_saver/status"
 
-    private val FOLDER_PICKER_REQUEST =
+    private val WHATSAPP_FOLDER_PICKER_REQUEST =
         1001
+
+    private val BUSINESS_FOLDER_PICKER_REQUEST =
+        1002
 
     // =============================================================
     // BACKGROUND EXECUTOR
@@ -39,11 +42,9 @@ class MainActivity : FlutterActivity() {
     private val mainHandler =
         Handler(Looper.getMainLooper())
 
-    private var folderPickerResult:
-            MethodChannel.Result? = null
 
-    private var folderPickerSource:
-            String? = null
+    private var folderPickerResult: MethodChannel.Result? = null
+
 
     // =============================================================
     // FLUTTER METHOD CHANNEL
@@ -156,6 +157,7 @@ class MainActivity : FlutterActivity() {
                 // =====================================================
 
                 "selectStatusFolder" -> {
+
                     val source =
                         call.argument<String>("source") ?: "whatsapp"
 
@@ -172,75 +174,113 @@ class MainActivity : FlutterActivity() {
                     }
 
                     folderPickerResult = result
-                    folderPickerSource = source
 
                     val intent =
-                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-
-                    val preferences =
-                        getSharedPreferences(
-                            "status_saver",
-                            MODE_PRIVATE
+                        Intent(
+                            Intent.ACTION_OPEN_DOCUMENT_TREE
                         )
 
-                    val preferenceKey =
+                    // =========================================================
+                    // BUILD THE INITIAL LOCATION
+                    //
+                    // IMPORTANT:
+                    // Samsung DocumentsUI correctly opens the requested folder
+                    // when Android/media is used as the TREE URI and the actual
+                    // WhatsApp .Statuses folder is supplied as a DOCUMENT URI.
+                    // =========================================================
+
+                    val statusPath =
                         if (source == "business") {
-                            "whatsapp_business_status_folder_uri"
+                            "Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses"
                         } else {
-                            "whatsapp_status_folder_uri"
+                            "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
                         }
 
-                    val storedUriString =
-                        preferences.getString(
-                            preferenceKey,
-                            null
-                        )
+                    val statusDocumentId =
+                        "primary:$statusPath"
 
-                    val initialUri: Uri?
+                    val parentTreeUri =
+                        try {
 
-                    if (!storedUriString.isNullOrEmpty()) {
-                        initialUri = try {
-                            Uri.parse(storedUriString)
+                            DocumentsContract.buildTreeDocumentUri(
+                                "com.android.externalstorage.documents",
+                                "primary:Android/media"
+                            )
+
                         } catch (e: Exception) {
+
+                            Log.e(
+                                "STATUS_DEBUG",
+                                "Failed to build Android/media tree URI. " +
+                                        "source=$source",
+                                e
+                            )
+
                             null
                         }
-                    } else {
-                        val mediaPath =
-                            if (source == "business") {
-                                "Android/media/com.whatsapp.w4b/WhatsApp Business/Media"
+
+                    val initialUri =
+                        try {
+
+                            if (parentTreeUri != null) {
+
+                                DocumentsContract.buildDocumentUriUsingTree(
+                                    parentTreeUri,
+                                    statusDocumentId
+                                )
+
                             } else {
-                                "Android/media/com.whatsapp/WhatsApp/Media"
-                            }
 
-                        val documentId =
-                            "primary:$mediaPath"
-
-                        initialUri =
-                            try {
-                                DocumentsContract.buildTreeDocumentUri(
-                                    "com.android.externalstorage.documents",
-                                    documentId
-                                )
-                            } catch (e: Exception) {
-                                Log.e(
-                                    "STATUS_DEBUG",
-                                    "Failed to build initial URI for $source",
-                                    e
-                                )
                                 null
                             }
-                    }
+
+                        } catch (e: Exception) {
+
+                            Log.e(
+                                "STATUS_DEBUG",
+                                "Failed to build initial status document URI. " +
+                                        "source=$source",
+                                e
+                            )
+
+                            null
+                        }
+
+                    // =========================================================
+                    // DEBUG
+                    //
+                    // Keep this log for now so we can verify the production
+                    // implementation one final time.
+                    // =========================================================
+
+                    Log.d(
+                        "STATUS_DEBUG",
+                        "STATUS FOLDER INITIAL URI | " +
+                                "source=$source | " +
+                                "parentTreeUri=$parentTreeUri | " +
+                                "documentId=$statusDocumentId | " +
+                                "initialUri=$initialUri"
+                    )
+
+                    // =========================================================
+                    // TELL ANDROID DOCUMENTSUI WHERE TO START
+                    // =========================================================
 
                     if (
                         Build.VERSION.SDK_INT >=
                         Build.VERSION_CODES.O &&
                         initialUri != null
                     ) {
+
                         intent.putExtra(
                             DocumentsContract.EXTRA_INITIAL_URI,
                             initialUri
                         )
                     }
+
+                    // =========================================================
+                    // PERSISTABLE READ PERMISSION
+                    // =========================================================
 
                     intent.addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or
@@ -248,14 +288,20 @@ class MainActivity : FlutterActivity() {
                                 Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
                     )
 
-                    Log.d(
-                        "STATUS_DEBUG",
-                        "Opening folder picker. source=$source initialUri=$initialUri"
-                    )
+                    // =========================================================
+                    // KEEP WHATSAPP AND WHATSAPP BUSINESS SEPARATE
+                    // =========================================================
+
+                    val requestCode =
+                        if (source == "business") {
+                            BUSINESS_FOLDER_PICKER_REQUEST
+                        } else {
+                            WHATSAPP_FOLDER_PICKER_REQUEST
+                        }
 
                     startActivityForResult(
                         intent,
-                        FOLDER_PICKER_REQUEST
+                        requestCode
                     )
                 }
 
@@ -1852,18 +1898,18 @@ class MainActivity : FlutterActivity() {
             data
         )
 
-        if (requestCode != FOLDER_PICKER_REQUEST) {
-            return
-        }
+        val source =
+            when (requestCode) {
+                WHATSAPP_FOLDER_PICKER_REQUEST -> "whatsapp"
+                BUSINESS_FOLDER_PICKER_REQUEST -> "business"
+                else -> return
+            }
 
         val result =
             folderPickerResult
 
-        val source =
-            folderPickerSource
 
         folderPickerResult = null
-        folderPickerSource = null
 
         if (result == null) {
             Log.e(
