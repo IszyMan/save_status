@@ -1,11 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StatusService {
   static const MethodChannel _channel =
-  MethodChannel('com.example.status_saver/status');
+  MethodChannel('com.iszyman.statusly/status');
 
   Future<Map<String, dynamic>?> getAppState() async {
     final result = await _channel.invokeMethod('getAppState');

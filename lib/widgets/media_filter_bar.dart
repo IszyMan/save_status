@@ -88,8 +88,8 @@ class _MediaFilterChip extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: selected
-                  ? Colors.white.withOpacity(0.20)
-                  : AppColors.primary.withOpacity(0.10),
+                  ? Colors.white.withValues(alpha: 0.20)
+                  : AppColors.primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

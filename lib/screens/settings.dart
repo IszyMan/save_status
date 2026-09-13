@@ -339,7 +339,7 @@ class SettingsScreen extends StatelessWidget {
       }) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.primary.withOpacity(0.12),
+        backgroundColor: AppColors.primary.withValues(alpha: 0.12),
         child: Icon(
           icon,
           color: AppColors.primaryDark,

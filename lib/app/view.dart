@@ -344,7 +344,7 @@ class _StatusViewState
         border: Border(
           top: BorderSide(
             color: Colors.white
-                .withOpacity(0.12),
+                .withValues(alpha: 0.12),
           ),
         ),
       ),
@@ -401,8 +401,7 @@ class _StatusViewState
                   Colors.white,
                   side: BorderSide(
                     color: Colors.white
-                        .withOpacity(
-                      0.55,
+                        .withValues(alpha: 0.55,
                     ),
                   ),
                 ),

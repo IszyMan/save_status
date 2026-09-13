@@ -216,7 +216,7 @@ class AppTheme {
       brightness: Brightness.dark,
     ).copyWith(
       primary: AppColors.primary,
-      onPrimary: AppColors.primaryDark,
+      onPrimary: Colors.white,
 
       secondary: AppColors.accent,
       onSecondary: Colors.white,

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,7 +20,7 @@ class StatusSaverApp extends StatelessWidget {
       title: 'Save Statusly',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
       home: const AppStartupScreen(),
     );
   }
@@ -177,7 +175,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   final PageController _pageController = PageController();
 
   // Only two filters.
-  // Videos is the default because "All" has been removed.
+  // Images is the default .
   String _statusFilter = 'images';
   String _savedFilter = 'images';
 
@@ -497,11 +495,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
         'Unable to load statuses: $e',
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _loadingStatuses = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loadingStatuses = false;
+        });
+      }
     }
   }
 
@@ -530,11 +528,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
         'Unable to load saved statuses: $e',
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _loadingSaved = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loadingSaved = false;
+        });
+      }
     }
   }
 
@@ -809,7 +807,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                     height: 72,
                     decoration: BoxDecoration(
                       color: AppColors.primary
-                          .withOpacity(0.12),
+                          .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -906,7 +904,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 height: 50,
                 decoration: BoxDecoration(
                   color: AppColors.primary
-                      .withOpacity(0.10),
+                      .withValues(alpha: 0.10),
                   borderRadius:
                   BorderRadius.circular(14),
                 ),
@@ -1098,7 +1096,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             vertical: 7,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.18),
+            color: Colors.white.withValues(alpha: 0.18),
             borderRadius:
             BorderRadius.circular(10),
           ),
@@ -1246,7 +1244,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   decoration:
                   BoxDecoration(
                     color: Colors.black
-                        .withOpacity(0.55),
+                        .withValues(alpha: 0.55),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1273,8 +1271,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 shape: const CircleBorder(),
                 elevation: 3,
                 shadowColor:
-                Colors.black.withOpacity(
-                  0.25,
+                Colors.black.withValues(
+                  alpha: 0.25,
                 ),
                 child: InkWell(
                   customBorder:
@@ -1391,6 +1389,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
                   ),
 
@@ -1511,6 +1510,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
 
@@ -1534,7 +1534,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   }
 
 
-  
+
 
   // ==========================================================================
   // STATUSES TAB

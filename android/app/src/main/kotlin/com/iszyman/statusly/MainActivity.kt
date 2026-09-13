@@ -1,9 +1,8 @@
-package com.example.status_saver
+package com.iszyman.statusly
 
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
@@ -14,9 +13,12 @@ import android.os.Looper
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -24,7 +26,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
 
     private val CHANNEL =
-        "com.example.status_saver/status"
+        "com.iszyman.statusly/status"
 
     private val WHATSAPP_FOLDER_PICKER_REQUEST =
         1001
@@ -889,7 +891,7 @@ class MainActivity : FlutterActivity() {
                                 } else {
 
                                     val stream =
-                                        java.io.ByteArrayOutputStream()
+                                        ByteArrayOutputStream()
 
                                     bitmap.compress(
                                         Bitmap.CompressFormat.JPEG,
