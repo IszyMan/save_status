@@ -13,7 +13,7 @@
     </queries>
 
     <application
-        android:label="Save Statusly"
+        android:label="Status Saver"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -38,6 +38,11 @@
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".StatusAccessInstructionActivity"
+            android:exported="false"
+            android:theme="@style/StatusAccessInstructionTheme" />
 
         <meta-data
             android:name="flutterEmbedding"

@@ -21,36 +21,7 @@ class StatusAccessSetup {
     source == 'business' ? 'WhatsApp Business' : 'WhatsApp';
 
     // ------------------------------------------------------------------------
-    // DIALOG 1
-    // ------------------------------------------------------------------------
-
-    final continueToDialogTwo = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (dialogContext) {
-        return _AccessDialog(
-          title: 'View $sourceName\nStatuses',
-          message: 'Allow Access to\n".Statuses" Folder',
-          buttonText: 'Use This Folder',
-          actionText: 'Continue 👈',
-          onAction: () {
-            Navigator.of(dialogContext).pop(true);
-          },
-        );
-      },
-    );
-
-    if (continueToDialogTwo != true) {
-      return false;
-    }
-
-    if (!context.mounted) {
-      return false;
-    }
-
-    // ------------------------------------------------------------------------
-    // DIALOG 2
+    // ACCESS DIALOG
     // ------------------------------------------------------------------------
 
     final startAndroidAccess = await showDialog<bool>(
@@ -59,10 +30,9 @@ class StatusAccessSetup {
       barrierColor: Colors.transparent,
       builder: (dialogContext) {
         return _AccessDialog(
-          title: 'To Get All Status',
-          message: 'Allow access to\n".Statuses" folder.',
-          buttonText: 'Allow Access 👈',
-          onAction: () async {
+          title: 'View $sourceName\nStatuses',
+          message: 'Allow access to the\n".Statuses" folder',
+          onAction: () {
             Navigator.of(dialogContext).pop(true);
           },
         );
@@ -75,6 +45,9 @@ class StatusAccessSetup {
 
     // ------------------------------------------------------------------------
     // OPEN THE REAL ANDROID SAF PICKER
+    //
+    // StatusAccessInstructionActivity is launched natively from
+    // MainActivity immediately after the Android picker opens.
     // ------------------------------------------------------------------------
 
     try {
@@ -99,16 +72,12 @@ class StatusAccessSetup {
 class _AccessDialog extends StatelessWidget {
   final String title;
   final String message;
-  final String buttonText;
-  final String actionText;
   final VoidCallback onAction;
 
   const _AccessDialog({
     required this.title,
     required this.message,
-    required this.buttonText,
     required this.onAction,
-    this.actionText = '',
   });
 
   @override
@@ -197,105 +166,33 @@ class _AccessDialog extends StatelessWidget {
             const SizedBox(height: 24),
 
             // ----------------------------------------------------------------
-            // VISUAL "USE THIS FOLDER" BUTTON
+            // ALLOW ACCESS BUTTON
             // ----------------------------------------------------------------
 
-            Container(
+            SizedBox(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.18),
+              child: ElevatedButton(
+                onPressed: onAction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.folder_rounded,
-                    size: 20,
-                    color: AppColors.primaryDark,
+                child: const Text(
+                  'Allow Access 👈',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                   ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      buttonText,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-
-            // ----------------------------------------------------------------
-            // ACTION BUTTON
-            // ----------------------------------------------------------------
-
-            if (actionText.isNotEmpty) ...[
-              const SizedBox(height: 14),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onAction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    actionText,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 14),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onAction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

@@ -305,6 +305,36 @@ class MainActivity : FlutterActivity() {
                         intent,
                         requestCode
                     )
+
+// =========================================================
+// SHOW OUR TRANSPARENT INSTRUCTION ABOVE DOCUMENTSUI
+//
+// IMPORTANT:
+// This does NOT replace Android's folder picker.
+// It only sits above it and explains what the user should
+// press next.
+// =========================================================
+
+                    try {
+
+                        val instructionIntent =
+                            Intent(
+                                this,
+                                StatusAccessInstructionActivity::class.java
+                            )
+
+                        startActivity(
+                            instructionIntent
+                        )
+
+                    } catch (e: Exception) {
+
+                        Log.e(
+                            "STATUS_DEBUG",
+                            "Unable to show status access instruction overlay",
+                            e
+                        )
+                    }
                 }
 
                 // =====================================================
