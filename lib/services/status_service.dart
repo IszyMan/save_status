@@ -141,4 +141,54 @@ class StatusService {
       );
     }
   }
+
+  // ==========================================================================
+  // DOWNLOADED STATUS TRACKING
+  // ==========================================================================
+
+  Future<Set<String>> getDownloadedStatusUris(
+      String source,
+      ) async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    final key =
+    source == 'business'
+        ? 'downloaded_statuses_business'
+        : 'downloaded_statuses_whatsapp';
+
+    final values =
+        preferences.getStringList(key) ?? [];
+
+    return values.toSet();
+  }
+
+  Future<void> markStatusDownloaded({
+    required String source,
+    required String uri,
+  }) async {
+    if (uri.isEmpty) {
+      return;
+    }
+
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    final key =
+    source == 'business'
+        ? 'downloaded_statuses_business'
+        : 'downloaded_statuses_whatsapp';
+
+    final values =
+        preferences.getStringList(key) ?? [];
+
+    if (!values.contains(uri)) {
+      values.add(uri);
+
+      await preferences.setStringList(
+        key,
+        values,
+      );
+    }
+  }
 }

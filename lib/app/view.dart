@@ -8,12 +8,14 @@ class StatusView extends StatefulWidget {
   final String filePath;
   final Map<String, dynamic> status;
   final bool isVideo;
+  final VoidCallback? onSaved;
 
   const StatusView({
     super.key,
     required this.filePath,
     required this.status,
     required this.isVideo,
+    this.onSaved,
   });
 
   @override
@@ -26,7 +28,7 @@ class _StatusViewState
   static const MethodChannel
   _channel =
   MethodChannel(
-    'com.example.status_saver/status',
+    'com.iszyman.statusly/status',
   );
 
   VideoPlayerController?
@@ -87,6 +89,10 @@ class _StatusViewState
 
       final alreadySaved =
           data['alreadySaved'] == true;
+
+      // The status is considered downloaded if Android reports
+      // that it was saved now OR that it was already saved.
+      widget.onSaved?.call();
 
       ScaffoldMessenger.of(
         context,

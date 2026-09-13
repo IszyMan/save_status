@@ -190,6 +190,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // Statuses that the user has already opened inside Statusly.
   final Set<String> _openedStatusUris = {};
 
+  // Statuses that have already been downloaded/saved.
+  final Set<String> _downloadedStatusUris = {};
+
   // ==========================================================================
   // INIT
   // ==========================================================================
@@ -481,6 +484,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
         source,
       );
 
+      final downloadedUris =
+      await _statusService.getDownloadedStatusUris(
+        source,
+      );
+
       if (!mounted) return;
 
       setState(() {
@@ -489,6 +497,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
         _openedStatusUris
           ..clear()
           ..addAll(openedUris);
+
+        _downloadedStatusUris
+          ..clear()
+          ..addAll(downloadedUris);
       });
     } catch (e) {
       debugPrint(
@@ -686,6 +698,53 @@ class _StatusHomePageState extends State<StatusHomePage> {
   }
 
   // ==========================================================================
+  // STATUS DOWNLOADED CHECK
+  // ==========================================================================
+
+  bool _isStatusDownloaded(
+      Map<String, dynamic> status,
+      ) {
+    final uri =
+        status['uri']?.toString() ?? '';
+
+    if (uri.isEmpty) {
+      return false;
+    }
+
+    return _downloadedStatusUris.contains(uri);
+  }
+
+  // ==========================================================================
+  // MARK STATUS DOWNLOADED
+  // ==========================================================================
+
+  Future<void> _markStatusDownloaded(
+      Map<String, dynamic> status,
+      ) async {
+    final source = _selectedSource;
+
+    final uri =
+        status['uri']?.toString() ?? '';
+
+    if (source == null || uri.isEmpty) {
+      return;
+    }
+
+    await _statusService.markStatusDownloaded(
+      source: source,
+      uri: uri,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _downloadedStatusUris.add(uri);
+    });
+  }
+
+  // ==========================================================================
   // OPEN STATUS
   // ==========================================================================
 
@@ -737,6 +796,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
             filePath: path,
             status: status,
             isVideo: _isVideo(status),
+            onSaved: () {
+              _markStatusDownloaded(status);
+            },
           ),
         ),
       );
@@ -1256,7 +1318,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
               ),
 
             // --------------------------------------------------------------
-            // DOWNLOAD ARROW
+            // DOWNLOAD ARROW and check mark
             //
             // IMPORTANT:
             // This does NOT download the status.
@@ -1280,11 +1342,13 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   onTap: () {
                     _openStatus(status);
                   },
-                  child: const SizedBox(
+                  child: SizedBox(
                     width: 42,
                     height: 42,
                     child: Icon(
-                      Icons.download_rounded,
+                      _isStatusDownloaded(status)
+                          ? Icons.check_rounded
+                          : Icons.download_rounded,
                       color: Colors.white,
                       size: 22,
                     ),
