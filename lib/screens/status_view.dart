@@ -407,8 +407,7 @@ class _StatusViewState
                   Colors.white,
                   side: BorderSide(
                     color: Colors.white
-                        .withValues(alpha: 0.55,
-                    ),
+                        .withValues(alpha: 0.55),
                   ),
                 ),
                 icon: _sharing

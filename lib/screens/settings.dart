@@ -95,11 +95,11 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 8),
 
         const Text(
-          'Settings',
+          'General Settings',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: AppColors.primary,
           ),
         ),
 
