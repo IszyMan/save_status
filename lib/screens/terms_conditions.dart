@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 class TermsConditionsScreen extends StatelessWidget {
   const TermsConditionsScreen({super.key});
 
@@ -70,11 +72,12 @@ class TermsConditionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Terms & Conditions',
+          l10n.termsConditionsTitle,
           style: TextStyle(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
@@ -85,7 +88,7 @@ class TermsConditionsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
           Text(
-            'Statusly Terms & Conditions',
+            l10n.termsConditionsDocumentTitle,
             style: TextStyle(
               fontSize: 25,
               fontWeight: FontWeight.w800,
@@ -96,7 +99,7 @@ class TermsConditionsScreen extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            'Last updated: September 11, 2026',
+            l10n.termsConditionsLastUpdated,
             style: TextStyle(
               fontSize: 13,
               color: colorScheme.onSurfaceVariant,
@@ -107,381 +110,390 @@ class TermsConditionsScreen extends StatelessWidget {
 
           _paragraph(
             context,
-            'Please read these Terms & Conditions carefully before using Statusly.',
+            l10n.termsConditionsIntro,
           ),
 
-          _sectionTitle(context, '1. Acceptance of These Terms'),
-
-          _paragraph(
+          // 1. Acceptance of These Terms
+          _sectionTitle(
             context,
-            'These Terms & Conditions ("Terms") govern your use of the '
-                'Statusly mobile application ("Statusly", "the App", or '
-                '"our App").',
+            '1. ${l10n.termsConditionsSection1Title}',
           ),
 
           _paragraph(
             context,
-            'By downloading, installing, accessing, or using Statusly, you '
-                'agree to be bound by these Terms.',
+            l10n.termsConditionsSection1Paragraph1,
           ),
 
           _paragraph(
             context,
-            'If you do not agree with these Terms, you should not use the App.',
-          ),
-
-          _sectionTitle(context, '2. Description of the App'),
-
-          _paragraph(
-            context,
-            'Statusly is a utility application designed to help users view '
-                'and save photos and videos from supported WhatsApp status media '
-                'that they can access on their Android device.',
+            l10n.termsConditionsSection1Paragraph2,
           ),
 
           _paragraph(
             context,
-            'The App does not provide WhatsApp accounts, WhatsApp messaging '
-                'services, or WhatsApp account management services.',
+            l10n.termsConditionsSection1Paragraph3,
           ),
 
-          _sectionTitle(context, '3. Eligibility'),
-
-          _paragraph(
+          // 2. Description of the App
+          _sectionTitle(
             context,
-            'You are responsible for ensuring that your use of Statusly is '
-                'permitted under the laws and regulations applicable to you.',
+            '2. ${l10n.termsConditionsSection2Title}',
           ),
 
           _paragraph(
             context,
-            'If you are not legally permitted to use an application of this '
-                'type in your location, you must not use Statusly.',
-          ),
-
-          _sectionTitle(context, '4. Proper Use of Statusly'),
-
-          _paragraph(
-            context,
-            'You agree to use Statusly only for lawful purposes and in '
-                'accordance with these Terms.',
+            l10n.termsConditionsSection2Paragraph1,
           ),
 
           _paragraph(
             context,
-            'You must not use Statusly to:',
+            l10n.termsConditionsSection2Paragraph2,
+          ),
+
+          // 3. Eligibility
+          _sectionTitle(
+            context,
+            '3. ${l10n.termsConditionsSection3Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection3Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection3Paragraph2,
+          ),
+
+          // 4. Proper Use of Statusly
+          _sectionTitle(
+            context,
+            '4. ${l10n.termsConditionsSection4Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection4Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection4Paragraph2,
           ),
 
           _bullet(
             context,
-            'Violate any applicable law or regulation.',
+            l10n.termsConditionsSection4Bullet1,
           ),
 
           _bullet(
             context,
-            'Infringe the copyright, trademark, privacy, publicity, '
-                'intellectual property, or other rights of another person.',
+            l10n.termsConditionsSection4Bullet2,
           ),
 
           _bullet(
             context,
-            'Save, copy, distribute, or use content without appropriate '
-                'authorization where authorization is required.',
+            l10n.termsConditionsSection4Bullet3,
           ),
 
           _bullet(
             context,
-            'Harass, threaten, impersonate, or harm another person.',
+            l10n.termsConditionsSection4Bullet4,
           ),
 
           _bullet(
             context,
-            'Attempt to interfere with, damage, reverse engineer, or '
-                'disrupt the App or its supporting systems, except where such '
-                'activity is expressly permitted by applicable law.',
+            l10n.termsConditionsSection4Bullet5,
           ),
 
           _bullet(
             context,
-            'Use the App for fraudulent, abusive, or unlawful activities.',
+            l10n.termsConditionsSection4Bullet6,
           ),
 
-          _sectionTitle(context, '5. Responsibility for Saved Content'),
-
-          _paragraph(
+          // 5. Responsibility for Saved Content
+          _sectionTitle(
             context,
-            'Statusly does not determine whether you have permission to save, '
-                'copy, share, publish, or otherwise use a particular photo or video.',
-          ),
-
-          _paragraph(
-            context,
-            'You are responsible for determining whether you have the '
-                'necessary rights or permission to use content accessed through Statusly.',
+            '5. ${l10n.termsConditionsSection5Title}',
           ),
 
           _paragraph(
             context,
-            'You are also responsible for how you use any content saved '
-                'using the App.',
+            l10n.termsConditionsSection5Paragraph1,
           ),
 
           _paragraph(
             context,
-            'You should respect the rights and wishes of content creators, '
-                'owners, and other individuals represented in the content.',
-          ),
-
-          _sectionTitle(context, '6. WhatsApp and Meta Disclaimer'),
-
-          _paragraph(
-            context,
-            'Statusly is an independent third-party application.',
+            l10n.termsConditionsSection5Paragraph2,
           ),
 
           _paragraph(
             context,
-            'Statusly is not affiliated with, endorsed by, sponsored by, '
-                'or officially connected with WhatsApp or Meta Platforms, Inc.',
+            l10n.termsConditionsSection5Paragraph3,
           ),
 
           _paragraph(
             context,
-            'WhatsApp, Meta, and their respective names, trademarks, logos, '
-                'and related intellectual property belong to their respective owners.',
+            l10n.termsConditionsSection5Paragraph4,
+          ),
+
+          // 6. WhatsApp and Meta Disclaimer
+          _sectionTitle(
+            context,
+            '6. ${l10n.termsConditionsSection6Title}',
           ),
 
           _paragraph(
             context,
-            'Statusly does not claim ownership of WhatsApp or Meta\'s '
-                'trademarks or intellectual property.',
-          ),
-
-          _sectionTitle(context, '7. Privacy'),
-
-          _paragraph(
-            context,
-            'Your use of Statusly is also subject to our Privacy Policy.',
+            l10n.termsConditionsSection6Paragraph1,
           ),
 
           _paragraph(
             context,
-            'The Privacy Policy explains how Statusly handles information '
-                'and the permissions required for the App\'s functionality.',
-          ),
-
-          _sectionTitle(context, '8. App Permissions'),
-
-          _paragraph(
-            context,
-            'Statusly may request access to files, folders, photos, videos, '
-                'or other device resources that are necessary for the App\'s '
-                'status-saving functionality.',
+            l10n.termsConditionsSection6Paragraph2,
           ),
 
           _paragraph(
             context,
-            'You control whether to grant requested permissions or folder '
-                'access through the Android operating system.',
+            l10n.termsConditionsSection6Paragraph3,
           ),
 
           _paragraph(
             context,
-            'If you do not grant access required for a particular feature, '
-                'that feature may not function correctly.',
+            l10n.termsConditionsSection6Paragraph4,
           ),
 
-          _sectionTitle(context, '9. Saved Files'),
-
-          _paragraph(
+          // 7. Privacy
+          _sectionTitle(
             context,
-            'When you use Statusly to save media, the saved files are stored '
-                'on your device.',
+            '7. ${l10n.termsConditionsSection7Title}',
           ),
 
           _paragraph(
             context,
-            'You are responsible for managing, protecting, backing up, and '
-                'deleting files saved through the App.',
+            l10n.termsConditionsSection7Paragraph1,
           ),
 
           _paragraph(
             context,
-            'We are not responsible for files that you delete, move, '
-                'overwrite, lose, or otherwise make inaccessible on your device.',
+            l10n.termsConditionsSection7Paragraph2,
           ),
 
-          _sectionTitle(context, '10. Availability of the App'),
-
-          _paragraph(
+          // 8. App Permissions
+          _sectionTitle(
             context,
-            'We aim to keep Statusly available and functional, but we do not '
-                'guarantee that the App will always operate without interruption, '
-                'errors, delays, or compatibility problems.',
+            '8. ${l10n.termsConditionsSection8Title}',
           ),
 
           _paragraph(
             context,
-            'Statusly\'s functionality may be affected by factors outside '
-                'our control, including Android updates, device configuration, '
-                'storage limitations, file-system changes, WhatsApp changes, '
-                'operating-system restrictions, or other third-party changes.',
-          ),
-
-          _sectionTitle(context, '11. Changes to the App'),
-
-          _paragraph(
-            context,
-            'Statusly may be modified, updated, improved, restricted, '
-                'suspended, or discontinued in whole or in part at any time.',
+            l10n.termsConditionsSection8Paragraph1,
           ),
 
           _paragraph(
             context,
-            'Updates may change how certain features work or introduce '
-                'new functionality.',
-          ),
-
-          _sectionTitle(context, '12. Third-Party Services'),
-
-          _paragraph(
-            context,
-            'Statusly may interact with or rely on functionality provided '
-                'by third-party applications or services, including Android '
-                'system functionality.',
+            l10n.termsConditionsSection8Paragraph2,
           ),
 
           _paragraph(
             context,
-            'Third-party applications and services are governed by their '
-                'own terms and policies. Statusly is not responsible for the '
-                'availability, content, policies, or practices of third-party services.',
+            l10n.termsConditionsSection8Paragraph3,
           ),
 
-          _sectionTitle(context, '13. Intellectual Property'),
-
-          _paragraph(
+          // 9. Saved Files
+          _sectionTitle(
             context,
-            'Unless otherwise stated, the original software, design, '
-                'branding, interface, graphics, text, and other original '
-                'materials that make up Statusly are protected by applicable '
-                'intellectual property laws.',
+            '9. ${l10n.termsConditionsSection9Title}',
           ),
 
           _paragraph(
             context,
-            'You may not reproduce, modify, distribute, sell, sublicense, '
-                'or commercially exploit the App or its original components '
-                'except where expressly permitted by applicable law or by the '
-                'applicable rights holder.',
-          ),
-
-          _sectionTitle(context, '14. No Warranty'),
-
-          _paragraph(
-            context,
-            'To the maximum extent permitted by applicable law, Statusly '
-                'is provided on an "as is" and "as available" basis.',
+            l10n.termsConditionsSection9Paragraph1,
           ),
 
           _paragraph(
             context,
-            'We do not guarantee that the App will always be available, '
-                'error-free, secure, compatible with every Android device, or '
-                'capable of accessing every type of WhatsApp status media.',
+            l10n.termsConditionsSection9Paragraph2,
           ),
 
           _paragraph(
             context,
-            'We do not guarantee that every status photo or video will be '
-                'successfully detected, displayed, previewed, or saved.',
+            l10n.termsConditionsSection9Paragraph3,
           ),
 
-          _sectionTitle(context, '15. Limitation of Liability'),
-
-          _paragraph(
+          // 10. Availability of the App
+          _sectionTitle(
             context,
-            'To the maximum extent permitted by applicable law, we shall '
-                'not be responsible for indirect, incidental, special, '
-                'consequential, or punitive damages arising from or related '
-                'to your use of Statusly.',
+            '10. ${l10n.termsConditionsSection10Title}',
           ),
 
           _paragraph(
             context,
-            'This may include, where permitted by law, loss of files, '
-                'loss of data, device issues, loss of profits, interruption '
-                'of service, or problems caused by third-party applications '
-                'or services.',
+            l10n.termsConditionsSection10Paragraph1,
           ),
 
           _paragraph(
             context,
-            'Nothing in these Terms is intended to exclude or limit '
-                'liability that cannot lawfully be excluded or limited under '
-                'applicable law.',
+            l10n.termsConditionsSection10Paragraph2,
           ),
 
-          _sectionTitle(context, '16. Termination'),
-
-          _paragraph(
+          // 11. Changes to the App
+          _sectionTitle(
             context,
-            'You may stop using Statusly at any time by uninstalling the '
-                'App from your device.',
+            '11. ${l10n.termsConditionsSection11Title}',
           ),
 
           _paragraph(
             context,
-            'Access to the App or particular features may also be restricted '
-                'or discontinued where necessary for security, legal, technical, '
-                'or operational reasons.',
-          ),
-
-          _sectionTitle(context, '17. Changes to These Terms'),
-
-          _paragraph(
-            context,
-            'These Terms may be updated from time to time.',
+            l10n.termsConditionsSection11Paragraph1,
           ),
 
           _paragraph(
             context,
-            'When changes are made, the "Last updated" date at the top of '
-                'this page will be updated.',
+            l10n.termsConditionsSection11Paragraph2,
+          ),
+
+          // 12. Third-Party Services
+          _sectionTitle(
+            context,
+            '12. ${l10n.termsConditionsSection12Title}',
           ),
 
           _paragraph(
             context,
-            'Your continued use of Statusly after updated Terms become '
-                'available means that you accept the updated Terms to the extent '
-                'permitted by applicable law.',
-          ),
-
-          _sectionTitle(context, '18. Governing Law'),
-
-          _paragraph(
-            context,
-            'These Terms shall be governed by and interpreted in accordance '
-                'with applicable law, without regard to conflict-of-law principles, '
-                'except where applicable law requires otherwise.',
+            l10n.termsConditionsSection12Paragraph1,
           ),
 
           _paragraph(
             context,
-            'Nothing in these Terms removes or limits any rights that you '
-                'may have under mandatory consumer protection laws applicable to you.',
+            l10n.termsConditionsSection12Paragraph2,
           ),
 
-          _sectionTitle(context, '19. Contact'),
+          // 13. Intellectual Property
+          _sectionTitle(
+            context,
+            '13. ${l10n.termsConditionsSection13Title}',
+          ),
 
           _paragraph(
             context,
-            'If you have questions about these Terms & Conditions or '
-                'Statusly, please contact:',
+            l10n.termsConditionsSection13Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection13Paragraph2,
+          ),
+
+          // 14. No Warranty
+          _sectionTitle(
+            context,
+            '14. ${l10n.termsConditionsSection14Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection14Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection14Paragraph2,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection14Paragraph3,
+          ),
+
+          // 15. Limitation of Liability
+          _sectionTitle(
+            context,
+            '15. ${l10n.termsConditionsSection15Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection15Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection15Paragraph2,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection15Paragraph3,
+          ),
+
+          // 16. Termination
+          _sectionTitle(
+            context,
+            '16. ${l10n.termsConditionsSection16Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection16Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection16Paragraph2,
+          ),
+
+          // 17. Changes to These Terms
+          _sectionTitle(
+            context,
+            '17. ${l10n.termsConditionsSection17Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection17Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection17Paragraph2,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection17Paragraph3,
+          ),
+
+          // 18. Governing Law
+          _sectionTitle(
+            context,
+            '18. ${l10n.termsConditionsSection18Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection18Paragraph1,
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection18Paragraph2,
+          ),
+
+          // 19. Contact
+          _sectionTitle(
+            context,
+            '19. ${l10n.termsConditionsSection19Title}',
+          ),
+
+          _paragraph(
+            context,
+            l10n.termsConditionsSection19Paragraph1,
           ),
 
           Text(
-            'Iszy_Man',
+            l10n.termsConditionsContactName,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -492,7 +504,7 @@ class TermsConditionsScreen extends StatelessWidget {
           const SizedBox(height: 4),
 
           Text(
-            'iszifyaws@gmail.com',
+            l10n.termsConditionsContactEmail,
             style: TextStyle(
               fontSize: 14,
               color: colorScheme.primary,
@@ -503,13 +515,12 @@ class TermsConditionsScreen extends StatelessWidget {
 
           _paragraph(
             context,
-            '© 2026 Iszy_Man. All rights reserved.',
+            l10n.termsConditionsCopyright,
           ),
 
           _paragraph(
             context,
-            'Statusly is an independent application and is not affiliated '
-                'with WhatsApp or Meta Platforms, Inc.',
+            l10n.termsConditionsFooterDisclaimer,
           ),
         ],
       ),

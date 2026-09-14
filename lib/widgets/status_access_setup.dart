@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../services/status_service.dart';
 import '../theme/app_theme.dart';
 
@@ -17,6 +18,8 @@ class StatusAccessSetup {
       return false;
     }
 
+    final l10n = AppLocalizations.of(context)!;
+
     final sourceName =
     source == 'business' ? 'WhatsApp Business' : 'WhatsApp';
 
@@ -30,8 +33,8 @@ class StatusAccessSetup {
       barrierColor: Colors.transparent,
       builder: (dialogContext) {
         return _AccessDialog(
-          title: 'View $sourceName\nStatuses',
-          message: 'Allow access to the\n".Statuses" folder',
+          title: l10n.saveSourceStatusTitle(sourceName),
+          message: l10n.allowAccessToStatusesFolder,
           onAction: () {
             Navigator.of(dialogContext).pop(true);
           },
@@ -82,6 +85,8 @@ class _AccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -184,9 +189,9 @@ class _AccessDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Allow Access 👈',
-                  style: TextStyle(
+                child: Text(
+                  l10n.allowAccessButton,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),

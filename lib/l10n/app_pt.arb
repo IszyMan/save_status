@@ -1,0 +1,364 @@
+{
+  "@@locale": "pt",
+  "appName": "Save Statusly",
+  "chooseLanguage": "Escolha o seu idioma",
+  "selectPreferredLanguage": "Selecione o seu idioma preferido",
+  "continueButton": "Continuar",
+  "allowAccess": "Permitir acesso",
+  "statuses": "Status",
+  "saved": "Guardados",
+  "settings": "Definições",
+    "language": "Idioma",
+    "generalSettings": "Definições gerais",
+    "manageWhatsAppStatusSources": "Gerir as suas fontes de estados do WhatsApp.",
+    "openWhatsApp": "Abrir o WhatsApp",
+    "returnDirectlyToWhatsApp": "Voltar diretamente ao WhatsApp",
+    "howToUseStatusly": "Como usar o Statusly",
+    "learnHowToViewAndSaveStatuses": "Saiba como ver e guardar estados",
+    "privacyPolicy": "Política de privacidade",
+    "learnHowStatuslyHandlesInformation": "Saiba como o Statusly gere as suas informações",
+    "termsAndConditions": "Termos e condições",
+    "readTermsForUsingStatusly": "Leia os termos para utilizar o Statusly",
+    "contactSupport": "Contactar o suporte",
+    "getHelpWithStatusly": "Obtenha ajuda com o Statusly",
+    "statusAccessIsConfigured": "O acesso aos estados está configurado",
+    "statusFolderNeedsConfiguration": "A pasta de estados precisa de ser configurada",
+    "noEmailAppFound": "Não foi encontrada nenhuma aplicação de e-mail neste dispositivo.",
+    "unableToOpenEmail": "Não foi possível abrir a sua aplicação de e-mail.",
+    "onboardingDescription": "Guarde fotos e vídeos dos estados do WhatsApp.",
+    "getStarted": "Começar",
+    "byContinuingYouAcknowledgeOur": "Ao continuar, você reconhece a nossa",
+    "and": "e",
+    "saveStatus": "Guardar estado",
+    "savePhotosAndVideosFromWhatsAppStatuses": "Guarde fotos e vídeos dos seus estados do WhatsApp.",
+    "statusAccessIsReady": "O acesso aos estados está pronto",
+    "setUpStatusAccess": "Configurar o acesso aos estados",
+    "whatsappNotFound": "WhatsApp não encontrado",
+    "installWhatsAppOrBusinessToUseStatusly": "Instale o WhatsApp ou o WhatsApp Business para utilizar o Statusly.",
+    "noVideosFound": "Nenhum vídeo encontrado",
+    "noImagesFound": "Nenhuma imagem encontrada",
+    "videoStatusesWillAppearHere": "Os estados de vídeo aparecerão aqui.",
+    "imageStatusesWillAppearHere": "Os estados de imagem aparecerão aqui.",
+    "noSavedVideos": "Nenhum vídeo guardado",
+    "noSavedImages": "Nenhuma imagem guardada",
+    "videosYouSaveWillAppearHere": "Os vídeos que guardar aparecerão aqui.",
+    "imagesYouSaveWillAppearHere": "As imagens que guardar aparecerão aqui.",
+    "howToSaveAStatus": "Como guardar um estado",
+    "viewAStatusOn": "Ver um estado no {sourceName}",
+    "@viewAStatusOn": {
+      "placeholders": {
+        "sourceName": {}
+      }
+    },
+    "openSaveStatusly": "Abrir o Save Statusly",
+    "returnToSaveStatuslyAfterViewing": "Volte ao Save Statusly depois de ver o estado.",
+    "saveOrDownloadTheStatus": "Guardar ou transferir o estado",
+    "viewedStatusWillAppearHere": "O estado visualizado aparecerá aqui. Abra-o e toque no botão Guardar ou Transferir.",
+    "openSource": "Abrir {sourceName}",
+    "@openSource": {
+      "placeholders": {
+        "sourceName": {}
+      }
+    },
+    "exitStatusly": "Sair do Statusly?",
+    "areYouSureYouWantToCloseTheApp": "Tem a certeza de que pretende fechar a aplicação?",
+    "cancel": "Cancelar",
+    "exit": "Sair",
+    "unableToOpenWhatsApp": "Não foi possível abrir o WhatsApp.",
+    "sourceNotInstalled": "{sourceName} não está instalado.",
+    "@sourceNotInstalled": {
+      "placeholders": {
+        "sourceName": {}
+      }
+    },
+    "sourceStatusAccessReady": "O acesso aos estados de {sourceName} está pronto.",
+    "@sourceStatusAccessReady": {
+      "placeholders": {
+        "sourceName": {}
+      }
+    },
+    "pleaseSelectStatusesFolder": "Selecione a pasta .Statuses.",
+    "unableToSetUpStatusAccess": "Não foi possível configurar o acesso aos estados: {error}",
+    "@unableToSetUpStatusAccess": {
+      "placeholders": {
+        "error": {}
+      }
+    },
+    "unableToOpenStatus": "Não foi possível abrir o estado: {error}",
+    "@unableToOpenStatus": {
+      "placeholders": {
+        "error": {}
+      }
+    },
+    "openWhatsAppTooltip": "Abrir o WhatsApp",
+    "openSourceAndViewStatus": "Abra o {sourceName} e veja o estado de foto ou vídeo que pretende guardar.",
+    "@openSourceAndViewStatus": {
+      "placeholders": {
+        "sourceName": {}
+      }
+    },
+    "images": "Imagens",
+    "videos": "Vídeos",
+
+    "statusPhotosAndVideoDownloader": "Descarregador de fotos e vídeos de estados",
+    "loading": "A carregar...",
+
+
+
+        "howToUseDescription": "Guarde fotos e vídeos dos estados do WhatsApp diretamente no seu dispositivo.",
+
+        "howToUseStep1Title": "Escolher o WhatsApp",
+        "howToUseStep1Description": "Selecione o WhatsApp ou o WhatsApp Business, dependendo da fonte de estados que deseja usar.",
+
+        "howToUseStep2Title": "Permitir que o Statusly aceda aos estados",
+        "howToUseStep2Description": "O Android irá pedir-lhe para permitir que o Statusly aceda à pasta de estados do WhatsApp selecionada. Siga as instruções do Android e confirme a seleção da pasta.",
+
+        "howToUseStep3Title": "Ver os estados disponíveis",
+        "howToUseStep3Description": "Depois de configurar o acesso, o Statusly irá apresentar as fotos e vídeos de estado disponíveis no separador Estados.",
+
+        "howToUseStep4Title": "Abrir um estado",
+        "howToUseStep4Description": "Toque numa foto ou vídeo para o visualizar. Os vídeos podem ser reproduzidos diretamente no Statusly.",
+
+        "howToUseStep5Title": "Guardar um estado",
+        "howToUseStep5Description": "Utilize a opção de guardar ao visualizar um estado para guardar a foto ou o vídeo selecionado no seu dispositivo.",
+
+        "howToUseStep6Title": "Encontrar os seus ficheiros guardados",
+        "howToUseStep6Description": "As fotos e vídeos guardados estão disponíveis no separador Guardados dentro do Statusly. Também são armazenados no seu dispositivo.",
+
+        "howToUseStep7Title": "Partilhar um estado",
+        "howToUseStep7Description": "Utilize a opção de partilha para enviar ficheiros multimédia compatíveis através de outras aplicações instaladas no seu dispositivo.",
+
+        "howToUseUsefulTips": "Dicas úteis",
+
+        "howToUseTip1": "Se utiliza o WhatsApp e o WhatsApp Business, configure cada fonte separadamente nas Definições.",
+        "howToUseTip2": "O Statusly não envia as suas fotos ou vídeos de estado para um servidor do Statusly. Os ficheiros multimédia compatíveis são processados localmente no seu dispositivo.",
+        "howToUseTip3": "Se um novo estado não aparecer imediatamente, volte ao separador Estados e atualize a lista.",
+        "howToUseTip4": "Guarde ou partilhe apenas ficheiros multimédia de estados que tenha autorização ou permissão para utilizar.",
+
+        "howToUseNeedHelp": "Precisa de ajuda?",
+        "howToUseHelpDescription": "Se tiver algum problema ao utilizar o Statusly, contacte o suporte através do ecrã Definições.",
+
+
+        "privacyPolicyTitle": "Política de Privacidade",
+        "privacyPolicyHeading": "Política de Privacidade do Statusly",
+        "lastUpdated": "Última atualização: 11 de setembro de 2026",
+        "privacyPolicyIntro": "O Statusly foi desenvolvido para ajudar a visualizar e guardar fotos e vídeos dos estados do WhatsApp no seu dispositivo Android.",
+
+        "privacySection1": "1. Introdução",
+        "privacySection1Paragraph1": "Esta Política de Privacidade explica como o Statusly trata as informações quando utiliza a aplicação móvel Statusly (\"Statusly\", \"a aplicação\" ou \"a nossa aplicação\").",
+        "privacySection1Paragraph2": "O Statusly foi desenvolvido com uma abordagem local. A aplicação não exige a criação de uma conta e a versão atual não utiliza um servidor que armazene as suas fotos ou vídeos dos estados do WhatsApp.",
+        "privacySection1Paragraph3": "Esta Política de Privacidade explica a que informações o Statusly acede, como essas informações são utilizadas, se são partilhadas com terceiros e como são conservadas ou eliminadas.",
+
+        "privacySection2": "2. Informações a que o Statusly acede",
+        "privacySection2Paragraph1": "O Statusly pode aceder a fotos e vídeos armazenados em localizações compatíveis de multimédia de estados do WhatsApp no seu dispositivo Android quando concede à aplicação o acesso necessário ou seleciona a pasta relevante através do sistema de seleção de ficheiros ou pastas do Android.",
+        "privacySection2Paragraph2": "Este acesso é necessário para a principal funcionalidade do Statusly: apresentar os ficheiros multimédia de estados do WhatsApp disponíveis para que possa visualizá-los e guardá-los no seu dispositivo.",
+        "privacySection2Paragraph3": "Dependendo do seu dispositivo, da versão do Android e das aplicações WhatsApp instaladas, o Statusly poderá suportar as pastas de estados do WhatsApp e do WhatsApp Business.",
+
+        "privacySection3": "3. Como o Statusly utiliza os ficheiros multimédia acedidos",
+        "privacySection3Paragraph1": "O Statusly utiliza as fotos e vídeos de estados a que acede para disponibilizar as funcionalidades da aplicação, incluindo:",
+        "privacyBulletDisplayStatuses": "Apresentar as fotos e vídeos de estados disponíveis.",
+        "privacyBulletViewStatuses": "Permitir visualizar os ficheiros multimédia dos estados.",
+        "privacyBulletSaveStatuses": "Permitir guardar os ficheiros multimédia de estados selecionados.",
+        "privacyBulletViewSaved": "Permitir visualizar os ficheiros multimédia guardados através da aplicação.",
+        "privacyBulletShareMedia": "Permitir utilizar as funções compatíveis de partilha ou abertura no seu dispositivo.",
+        "privacySection3Paragraph2": "A versão atual do Statusly processa localmente no seu dispositivo os ficheiros multimédia de estados suportados. O Statusly não precisa de carregar as suas fotos ou vídeos de estados do WhatsApp para um servidor do Statusly para disponibilizar estas funcionalidades principais.",
+
+        "privacySection4": "4. Informações que não recolhemos",
+        "privacySection4Paragraph1": "A versão atual do Statusly não exige a criação de uma conta e não recolhe intencionalmente informações pessoais como:",
+        "privacyBulletName": "O seu nome.",
+        "privacyBulletPhone": "O seu número de telefone.",
+        "privacyBulletEmail": "O seu endereço de e-mail através da aplicação.",
+        "privacyBulletWhatsAppCredentials": "As credenciais da sua conta do WhatsApp.",
+        "privacyBulletWhatsAppMessages": "As suas mensagens do WhatsApp.",
+        "privacyBulletWhatsAppContacts": "Os seus contactos do WhatsApp.",
+        "privacyBulletPasswords": "As suas palavras-passe.",
+        "privacyBulletPayment": "As suas informações de pagamento.",
+        "privacyBulletLocation": "A sua localização exata.",
+        "privacySection4Paragraph2": "O Statusly também não exige um nome de utilizador ou uma palavra-passe para utilizar as suas funcionalidades principais.",
+
+        "privacySection5": "5. Armazenamento local e preferências da aplicação",
+        "privacySection5Paragraph1": "O Statusly pode armazenar determinadas preferências da aplicação localmente no seu dispositivo. Estas podem incluir informações como se concluiu o processo de configuração inicial ou qual a fonte de estados compatível que selecionou pela última vez.",
+        "privacySection5Paragraph2": "Estas informações são armazenadas localmente no seu dispositivo e utilizadas para que a aplicação funcione corretamente e memorize as suas preferências.",
+        "privacySection5Paragraph3": "Estas informações de preferências locais não são utilizadas pelo Statusly para o identificar pessoalmente.",
+
+        "privacySection6": "6. Fotos e vídeos guardados",
+        "privacySection6Paragraph1": "Quando escolhe guardar uma foto ou vídeo através do Statusly, o ficheiro resultante é armazenado no seu dispositivo de acordo com a funcionalidade de guardar da aplicação e com o sistema de armazenamento do Android.",
+        "privacySection6Paragraph2": "O Statusly não mantém uma cópia dos seus ficheiros multimédia de estados guardados num servidor como parte do funcionamento normal da aplicação.",
+        "privacySection6Paragraph3": "Os ficheiros guardados por si permanecem no seu dispositivo até decidir eliminá-los através das funcionalidades disponíveis do dispositivo, da galeria, do gestor de ficheiros ou da aplicação.",
+
+        "privacySection7": "7. Partilha de informações com terceiros",
+        "privacySection7Paragraph1": "O Statusly não vende, aluga nem comercializa as suas informações pessoais.",
+        "privacySection7Paragraph2": "Na versão atual da aplicação, o Statusly não envia intencionalmente as suas fotos ou vídeos de estados do WhatsApp para servidores de terceiros para armazenamento ou fins publicitários.",
+        "privacySection7Paragraph3": "Se optar por utilizar as funções do Android para partilhar, abrir ou outras funcionalidades de terceiros, as informações ou ficheiros multimédia que escolher partilhar poderão ser tratados pela aplicação ou serviço selecionado. Esse tratamento é regido pela política de privacidade e pelos termos do terceiro envolvido.",
+
+        "privacySection8": "8. Serviços e software de terceiros",
+        "privacySection8Paragraph1": "O Statusly pode utilizar bibliotecas de software de terceiros necessárias para disponibilizar determinadas funções técnicas da aplicação.",
+        "privacySection8Paragraph2": "O software de terceiros pode processar informações de acordo com o seu próprio funcionamento técnico e com as políticas aplicáveis.",
+        "privacySection8Paragraph3": "Se futuras versões do Statusly introduzirem análises, publicidade, relatórios de falhas, serviços na nuvem ou outros serviços de terceiros que recolham ou transmitam dados dos utilizadores, esta Política de Privacidade será atualizada para explicar as práticas de dados aplicáveis.",
+
+        "privacySection9": "9. Publicidade",
+        "privacySection9Paragraph1": "A versão atual do Statusly não utiliza serviços de publicidade como parte das suas funcionalidades principais.",
+        "privacySection9Paragraph2": "Se forem introduzidos serviços de publicidade numa versão futura, esta Política de Privacidade será atualizada para explicar a tecnologia publicitária, as práticas de dados e os serviços de terceiros aplicáveis.",
+
+        "privacySection10": "10. Segurança dos dados",
+        "privacySection10Paragraph1": "São tomadas medidas razoáveis para proteger as informações tratadas pelo Statusly e limitar o acesso às informações ao que for necessário para o funcionamento da aplicação.",
+        "privacySection10Paragraph2": "Como o Statusly processa principalmente os ficheiros multimédia de estados suportados localmente no seu dispositivo Android, os seus ficheiros multimédia de estados normalmente não são transmitidos para um servidor do Statusly para armazenamento.",
+        "privacySection10Paragraph3": "No entanto, nenhum sistema de armazenamento eletrónico ou método de transmissão pode ser considerado completamente seguro. Deve também utilizar os recursos de segurança fornecidos pelo seu dispositivo Android para proteger os seus ficheiros e informações.",
+
+        "privacySection11": "11. Retenção e eliminação de dados",
+        "privacySection11Paragraph1": "O Statusly não mantém uma conta num servidor que contenha as suas informações pessoais.",
+        "privacySection11Paragraph2": "As preferências locais da aplicação permanecem no seu dispositivo enquanto forem necessárias para a aplicação. Dependendo do seu dispositivo Android e das respetivas definições, desinstalar o Statusly ou limpar os dados da aplicação pode remover os dados armazenados localmente.",
+        "privacySection11Paragraph3": "As fotos e vídeos que guarda são ficheiros armazenados no seu dispositivo. Pode eliminar esses ficheiros através da galeria do dispositivo, do gestor de ficheiros ou de outra funcionalidade de eliminação disponível.",
+        "privacySection11Paragraph4": "Como o Statusly não exige contas de utilizador na versão atual, não existe uma conta do Statusly cuja eliminação tenha de solicitar.",
+
+        "privacySection12": "12. Privacidade das crianças",
+        "privacySection12Paragraph1": "O Statusly não foi especificamente concebido para crianças.",
+        "privacySection12Paragraph2": "Não recolhemos conscientemente informações pessoais de crianças através da aplicação. Se acredita que uma criança nos forneceu informações pessoais, contacte-nos para que a situação possa ser analisada.",
+
+        "privacySection13": "13. Aviso sobre o WhatsApp e a Meta",
+        "privacySection13Paragraph1": "O Statusly é uma aplicação independente e não é afiliado, aprovado, patrocinado ou oficialmente associado ao WhatsApp ou à Meta Platforms, Inc.",
+        "privacySection13Paragraph2": "\"WhatsApp\" e os nomes, marcas comerciais e logótipos relacionados pertencem aos respetivos proprietários.",
+        "privacySection13Paragraph3": "O Statusly é uma ferramenta de terceiros destinada a ajudar os utilizadores a gerir e guardar ficheiros multimédia de estados aos quais estão autorizados a aceder e guardar.",
+
+        "privacySection14": "14. A sua responsabilidade relativamente ao conteúdo guardado",
+        "privacySection14Paragraph1": "O Statusly fornece ferramentas para guardar ficheiros multimédia que estão acessíveis no seu dispositivo.",
+        "privacySection14Paragraph2": "É responsável por garantir que possui os direitos, permissões ou autorizações adequados para guardar, copiar, partilhar ou utilizar de qualquer outra forma qualquer foto, vídeo ou outro conteúdo a que aceda através da aplicação.",
+        "privacySection14Paragraph3": "Deve respeitar a privacidade, os direitos de autor, a propriedade intelectual e outros direitos legais dos criadores de conteúdos e de outras pessoas.",
+
+        "privacySection15": "15. Alterações a esta Política de Privacidade",
+        "privacySection15Paragraph1": "Esta Política de Privacidade pode ser atualizada periodicamente para refletir alterações ao Statusly, alterações nas leis aplicáveis ou alterações nas práticas de dados.",
+        "privacySection15Paragraph2": "Quando forem feitas alterações, a data de \"Última atualização\" no topo desta página será atualizada.",
+        "privacySection15Paragraph3": "Recomendamos que reveja periodicamente esta Política de Privacidade para se manter informado sobre a forma como o Statusly trata as informações.",
+
+        "privacySection16": "16. Contacto",
+        "privacySection16Paragraph1": "Se tiver dúvidas, preocupações ou pedidos relacionados com esta Política de Privacidade ou com as práticas de privacidade do Statusly, contacte:",
+        "privacyCopyright": "© 2026 Iszy_Man. Todos os direitos reservados.",
+        "privacyDisclaimer": "O Statusly é uma aplicação independente e não é afiliado ao WhatsApp nem à Meta Platforms, Inc.",
+
+
+
+        "termsConditions": "Termos e Condições",
+        "statuslyTermsConditions": "Termos e Condições do Statusly",
+        "lastUpdatedSeptember11": "Última atualização: 11 de setembro de 2026",
+        "termsIntro": "Leia atentamente estes Termos e Condições antes de utilizar o Statusly.",
+
+        "termsSection1": "1. Aceitação destes Termos",
+        "terms1Paragraph1": "Estes Termos e Condições («Termos») regem a utilização da aplicação móvel Statusly («Statusly», «a Aplicação» ou «a nossa Aplicação»).",
+        "terms1Paragraph2": "Ao descarregar, instalar, aceder ou utilizar o Statusly, aceita ficar vinculado por estes Termos.",
+        "terms1Paragraph3": "Se não concordar com estes Termos, não deverá utilizar a Aplicação.",
+
+        "termsSection2": "2. Descrição da Aplicação",
+        "terms2Paragraph1": "O Statusly é uma aplicação utilitária concebida para ajudar os utilizadores a visualizar e guardar fotos e vídeos de estados do WhatsApp compatíveis aos quais podem aceder no seu dispositivo Android.",
+        "terms2Paragraph2": "A Aplicação não fornece contas do WhatsApp, serviços de mensagens do WhatsApp nem serviços de gestão de contas do WhatsApp.",
+
+        "termsSection3": "3. Elegibilidade",
+        "terms3Paragraph1": "É responsável por garantir que a sua utilização do Statusly é permitida pelas leis e regulamentações aplicáveis a si.",
+        "terms3Paragraph2": "Se não estiver legalmente autorizado a utilizar uma aplicação deste tipo na sua localização, não deverá utilizar o Statusly.",
+
+        "termsSection4": "4. Utilização adequada do Statusly",
+        "terms4Paragraph1": "Concorda em utilizar o Statusly apenas para fins legais e de acordo com estes Termos.",
+        "terms4Paragraph2": "Não deverá utilizar o Statusly para:",
+        "terms4Bullet1": "Violar qualquer lei ou regulamentação aplicável.",
+        "terms4Bullet2": "Infringir os direitos de autor, marcas comerciais, privacidade, direitos de imagem, propriedade intelectual ou outros direitos de outra pessoa.",
+        "terms4Bullet3": "Guardar, copiar, distribuir ou utilizar conteúdos sem a autorização adequada quando essa autorização for necessária.",
+        "terms4Bullet4": "Assediar, ameaçar, fazer-se passar por outra pessoa ou prejudicar outra pessoa.",
+        "terms4Bullet5": "Tentar interferir, danificar, fazer engenharia reversa ou interromper a Aplicação ou os seus sistemas de suporte, exceto quando tal atividade for expressamente permitida pela legislação aplicável.",
+        "terms4Bullet6": "Utilizar a Aplicação para atividades fraudulentas, abusivas ou ilegais.",
+
+        "termsSection5": "5. Responsabilidade pelo conteúdo guardado",
+        "terms5Paragraph1": "O Statusly não determina se tem autorização para guardar, copiar, partilhar, publicar ou utilizar de qualquer outra forma uma determinada foto ou vídeo.",
+        "terms5Paragraph2": "É responsável por determinar se possui os direitos ou autorizações necessários para utilizar conteúdos acedidos através do Statusly.",
+        "terms5Paragraph3": "É também responsável pela forma como utiliza qualquer conteúdo guardado através da Aplicação.",
+        "terms5Paragraph4": "Deve respeitar os direitos e desejos dos criadores, proprietários e outras pessoas representadas nos conteúdos.",
+
+        "termsSection6": "6. Aviso sobre o WhatsApp e a Meta",
+        "terms6Paragraph1": "O Statusly é uma aplicação independente de terceiros.",
+        "terms6Paragraph2": "O Statusly não é afiliado, aprovado, patrocinado ou oficialmente associado ao WhatsApp ou à Meta Platforms, Inc.",
+        "terms6Paragraph3": "WhatsApp, Meta e os respetivos nomes, marcas comerciais, logótipos e propriedade intelectual relacionada pertencem aos respetivos proprietários.",
+        "terms6Paragraph4": "O Statusly não reivindica a propriedade das marcas comerciais ou da propriedade intelectual do WhatsApp ou da Meta.",
+
+        "termsSection7": "7. Privacidade",
+        "terms7Paragraph1": "A sua utilização do Statusly também está sujeita à nossa Política de Privacidade.",
+        "terms7Paragraph2": "A Política de Privacidade explica como o Statusly trata as informações e as permissões necessárias para o funcionamento da Aplicação.",
+
+        "termsSection8": "8. Permissões da Aplicação",
+        "terms8Paragraph1": "O Statusly pode solicitar acesso a ficheiros, pastas, fotos, vídeos ou outros recursos do dispositivo necessários para as funcionalidades de guardar estados da Aplicação.",
+        "terms8Paragraph2": "O utilizador controla se concede as permissões ou o acesso às pastas solicitados através do sistema operativo Android.",
+        "terms8Paragraph3": "Se não conceder o acesso necessário para uma determinada funcionalidade, essa funcionalidade poderá não funcionar corretamente.",
+
+        "termsSection9": "9. Ficheiros guardados",
+        "terms9Paragraph1": "Quando utiliza o Statusly para guardar multimédia, os ficheiros guardados são armazenados no seu dispositivo.",
+        "terms9Paragraph2": "É responsável por gerir, proteger, fazer cópias de segurança e eliminar os ficheiros guardados através da Aplicação.",
+        "terms9Paragraph3": "Não somos responsáveis por ficheiros que elimine, mova, substitua, perca ou torne inacessíveis de qualquer outra forma no seu dispositivo.",
+
+        "termsSection10": "10. Disponibilidade da Aplicação",
+        "terms10Paragraph1": "Procuramos manter o Statusly disponível e funcional, mas não garantimos que a Aplicação funcione sempre sem interrupções, erros, atrasos ou problemas de compatibilidade.",
+        "terms10Paragraph2": "A funcionalidade do Statusly pode ser afetada por fatores fora do nosso controlo, incluindo atualizações do Android, configuração do dispositivo, limitações de armazenamento, alterações no sistema de ficheiros, alterações do WhatsApp, restrições do sistema operativo ou outras alterações de terceiros.",
+
+        "termsSection11": "11. Alterações à Aplicação",
+        "terms11Paragraph1": "O Statusly pode ser modificado, atualizado, melhorado, restringido, suspenso ou descontinuado, total ou parcialmente, a qualquer momento.",
+        "terms11Paragraph2": "As atualizações podem alterar o funcionamento de determinadas funcionalidades ou introduzir novas funcionalidades.",
+
+        "termsSection12": "12. Serviços de terceiros",
+        "terms12Paragraph1": "O Statusly pode interagir com ou depender de funcionalidades fornecidas por aplicações ou serviços de terceiros, incluindo funcionalidades do sistema Android.",
+        "terms12Paragraph2": "As aplicações e serviços de terceiros são regidos pelos seus próprios termos e políticas. O Statusly não é responsável pela disponibilidade, conteúdo, políticas ou práticas de serviços de terceiros.",
+
+        "termsSection13": "13. Propriedade intelectual",
+        "terms13Paragraph1": "Salvo indicação em contrário, o software original, design, marca, interface, gráficos, textos e outros materiais originais que constituem o Statusly estão protegidos pelas leis de propriedade intelectual aplicáveis.",
+        "terms13Paragraph2": "Não pode reproduzir, modificar, distribuir, vender, sublicenciar ou explorar comercialmente a Aplicação ou os seus componentes originais, exceto quando expressamente permitido pela legislação aplicável ou pelo respetivo titular dos direitos.",
+
+        "termsSection14": "14. Ausência de garantia",
+        "terms14Paragraph1": "Na máxima medida permitida pela legislação aplicável, o Statusly é fornecido «tal como está» e «conforme disponível».",
+        "terms14Paragraph2": "Não garantimos que a Aplicação esteja sempre disponível, livre de erros, segura, compatível com todos os dispositivos Android ou capaz de aceder a todos os tipos de multimédia de estados do WhatsApp.",
+        "terms14Paragraph3": "Não garantimos que todas as fotos ou vídeos de estado sejam detetados, apresentados, pré-visualizados ou guardados com sucesso.",
+
+        "termsSection15": "15. Limitação de responsabilidade",
+        "terms15Paragraph1": "Na máxima medida permitida pela legislação aplicável, não seremos responsáveis por danos indiretos, incidentais, especiais, consequenciais ou punitivos decorrentes ou relacionados com a sua utilização do Statusly.",
+        "terms15Paragraph2": "Isto pode incluir, quando permitido por lei, perda de ficheiros, perda de dados, problemas com o dispositivo, perda de lucros, interrupção do serviço ou problemas causados por aplicações ou serviços de terceiros.",
+        "terms15Paragraph3": "Nada nestes Termos pretende excluir ou limitar qualquer responsabilidade que não possa ser legalmente excluída ou limitada ao abrigo da legislação aplicável.",
+
+        "termsSection16": "16. Rescisão",
+        "terms16Paragraph1": "Pode deixar de utilizar o Statusly a qualquer momento desinstalando a Aplicação do seu dispositivo.",
+        "terms16Paragraph2": "O acesso à Aplicação ou a determinadas funcionalidades também pode ser restringido ou descontinuado quando necessário por motivos de segurança, legais, técnicos ou operacionais.",
+
+        "termsSection17": "17. Alterações a estes Termos",
+        "terms17Paragraph1": "Estes Termos podem ser atualizados periodicamente.",
+        "terms17Paragraph2": "Quando forem efetuadas alterações, a data de «Última atualização» no topo desta página será atualizada.",
+        "terms17Paragraph3": "A continuação da utilização do Statusly depois de os Termos atualizados estarem disponíveis significa que aceita os Termos atualizados na medida permitida pela legislação aplicável.",
+
+        "termsSection18": "18. Lei aplicável",
+        "terms18Paragraph1": "Estes Termos serão regidos e interpretados de acordo com a legislação aplicável, sem considerar os princípios de conflito de leis, exceto quando a legislação aplicável determinar o contrário.",
+        "terms18Paragraph2": "Nada nestes Termos elimina ou limita quaisquer direitos que possa ter ao abrigo das leis obrigatórias de proteção do consumidor aplicáveis a si.",
+
+        "termsSection19": "19. Contacto",
+        "terms19Paragraph1": "Se tiver dúvidas sobre estes Termos e Condições ou sobre o Statusly, contacte-nos:",
+
+        "allRightsReserved": "© 2026 Iszy_Man. Todos os direitos reservados.",
+        "independentAppDisclaimer": "O Statusly é uma aplicação independente e não é afiliado ao WhatsApp ou à Meta Platforms, Inc.",
+
+
+        "status": "Estado",
+        "alreadySavedToGallery": "Já guardado na sua galeria.",
+        "savedToGallery": "Guardado na sua galeria.",
+        "unableToSaveStatus": "Não foi possível guardar o estado.",
+        "unableToSaveStatusWithError": "Não foi possível guardar o estado: {error}",
+        "unableToShareStatus": "Não foi possível partilhar o estado.",
+        "unableToShareStatusWithError": "Não foi possível partilhar o estado: {error}",
+        "videoFileDoesNotExist": "O ficheiro de vídeo não existe.",
+        "videoFileIsEmpty": "O ficheiro de vídeo está vazio.",
+        "unableToPlayVideo": "Não foi possível reproduzir o vídeo.",
+        "saving": "A guardar...",
+        "download": "Transferir",
+        "sharing": "A partilhar...",
+        "share": "Partilhar",
+
+
+        "saveSourceStatusTitle": "Guardar estados do {sourceName}\nVídeos e fotos",
+        "@saveSourceStatusTitle": {
+          "placeholders": {
+            "sourceName": {}
+          }
+        },
+        "allowAccessToStatusesFolder": "Permitir acesso à\npasta \".Statuses\"",
+        "allowAccessButton": "Permitir acesso 👈"
+}

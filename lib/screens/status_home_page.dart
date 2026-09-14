@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:status_saver/screens/status_view.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../services/status_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/media_filter_bar.dart';
@@ -10,13 +11,17 @@ import '../widgets/status_thumbnail.dart';
 import '../screens/settings.dart';
 import '../widgets/status_access_setup.dart';
 
-
 // ============================================================================
 // STATUS HOME PAGE
 // ============================================================================
 
 class StatusHomePage extends StatefulWidget {
-  const StatusHomePage({super.key});
+  final ValueChanged<Locale> onLanguageChanged;
+
+  const StatusHomePage({
+    super.key,
+    required this.onLanguageChanged,
+  });
 
   @override
   State<StatusHomePage> createState() => _StatusHomePageState();
@@ -45,7 +50,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   final PageController _pageController = PageController();
 
   // Only two filters.
-  // Images is the default .
+  // Images is the default.
   String _statusFilter = 'images';
   String _savedFilter = 'images';
 
@@ -74,7 +79,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
     _loadAppState();
     _loadSavedStatuses();
   }
-
 
   @override
   void dispose() {
@@ -132,8 +136,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return;
     }
 
-    // Prefer the source the user selected last,
-    // but only if it is still installed and configured.
     if (_lastSelectedSource != null &&
         configuredSources.contains(_lastSelectedSource)) {
       if (!mounted) return;
@@ -149,7 +151,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return;
     }
 
-    // Otherwise use the first configured source.
     final source = configuredSources.first;
 
     if (!mounted) return;
@@ -195,17 +196,14 @@ class _StatusHomePageState extends State<StatusHomePage> {
     return 'WhatsApp';
   }
 
-
   List<String> get _configuredSources {
     final sources = <String>[];
 
-    if (_whatsappInstalled &&
-        _whatsappConfigured) {
+    if (_whatsappInstalled && _whatsappConfigured) {
       sources.add('whatsapp');
     }
 
-    if (_businessInstalled &&
-        _businessConfigured) {
+    if (_businessInstalled && _businessConfigured) {
       sources.add('business');
     }
 
@@ -217,6 +215,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _openWhatsApp() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final source = _selectedSource;
 
     if (source == null) {
@@ -234,7 +234,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${_sourceName(source)} is not installed.',
+              l10n.sourceNotInstalled(
+                _sourceName(source),
+              ),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -248,9 +250,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Unable to open WhatsApp.',
+            l10n.unableToOpenWhatsApp,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -263,6 +265,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _setupSource(String source) async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final success = await StatusAccessSetup.show(
         context: context,
@@ -284,16 +288,18 @@ class _StatusHomePageState extends State<StatusHomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${_sourceName(source)} status access is ready.',
+              l10n.sourceStatusAccessReady(
+                _sourceName(source),
+              ),
             ),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Please select the .Statuses folder.',
+              l10n.pleaseSelectStatusesFolder,
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -307,7 +313,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unable to set up status access: $e',
+            l10n.unableToSetUpStatusAccess(
+              e.toString(),
+            ),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -450,7 +458,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
     await _loadStatuses(source);
   }
 
-
   Future<void> _handleSettingsSource(String source) async {
     if (_isConfigured(source)) {
       await _selectSource(source);
@@ -552,7 +559,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
         name.endsWith('.mov');
   }
 
-
   // ==========================================================================
   // STATUS OPENED CHECK
   // ==========================================================================
@@ -624,6 +630,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
   Future<void> _openStatus(
       Map<String, dynamic> status,
       ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final path =
       await _statusService.prepareStatus(
@@ -687,7 +695,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unable to open status: $e',
+            l10n.unableToOpenStatus(
+              e.toString(),
+            ),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -718,6 +728,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildSetupContent() {
+    final l10n = AppLocalizations.of(context)!;
     final installed = _installedSources;
 
     return SafeArea(
@@ -757,10 +768,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   height: 24,
                 ),
 
-                const Text(
-                  'Save Status',
+                Text(
+                  l10n.saveStatus,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
                   ),
@@ -770,10 +781,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   height: 12,
                 ),
 
-                const Text(
-                  'Save photos and videos from your WhatsApp statuses.',
+                Text(
+                  l10n.savePhotosAndVideosFromWhatsAppStatuses,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     height: 1.5,
                     color: AppColors.textSecondary,
@@ -789,8 +800,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                 for (final source in installed)
                   Padding(
-                    padding:
-                    const EdgeInsets.only(
+                    padding: const EdgeInsets.only(
                       bottom: 14,
                     ),
                     child: _buildSetupCard(
@@ -810,6 +820,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildSetupCard(String source) {
+    final l10n = AppLocalizations.of(context)!;
     final configured = _isConfigured(source);
 
     return Card(
@@ -873,8 +884,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                     Text(
                       configured
-                          ? 'Status access is ready'
-                          : 'Set up status access',
+                          ? l10n.statusAccessIsReady
+                          : l10n.setUpStatusAccess,
                       style: TextStyle(
                         color: configured
                             ? AppColors.primaryDark
@@ -905,38 +916,40 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildNoWhatsAppCard() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          children: const [
-            Icon(
+          children: [
+            const Icon(
               Icons.chat_bubble_outline,
               size: 48,
               color: AppColors.textSecondary,
             ),
 
-            SizedBox(
+            const SizedBox(
               height: 16,
             ),
 
             Text(
-              'WhatsApp not found',
-              style: TextStyle(
+              l10n.whatsappNotFound,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            SizedBox(
+            const SizedBox(
               height: 8,
             ),
 
             Text(
-              'Install WhatsApp or WhatsApp Business to use Status Saver.',
+              l10n.installWhatsAppOrBusinessToUseStatusly,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textSecondary,
               ),
             ),
@@ -959,8 +972,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return const SizedBox.shrink();
     }
 
-    // Only one configured source.
-    // Show its name without a dropdown.
     if (configuredSources.length == 1) {
       return Padding(
         padding: const EdgeInsets.only(
@@ -979,8 +990,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       );
     }
 
-    // Two configured sources.
-    // Show the dropdown.
     return Padding(
       padding: const EdgeInsets.only(
         right: 4,
@@ -1061,8 +1070,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       ),
     );
   }
-
-
 
   // ==========================================================================
   // MEDIA GRID
@@ -1154,10 +1161,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // --------------------------------------------------------------
-            // THUMBNAIL
-            // --------------------------------------------------------------
-
             StatusThumbnail(
               status: status,
               cachedBytes:
@@ -1171,10 +1174,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 );
               },
             ),
-
-            // --------------------------------------------------------------
-            // VIDEO PLAY ICON
-            // --------------------------------------------------------------
 
             if (isVideo)
               Center(
@@ -1194,14 +1193,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   ),
                 ),
               ),
-
-            // --------------------------------------------------------------
-            // DOWNLOAD ARROW and check mark
-            //
-            // IMPORTANT:
-            // This does NOT download the status.
-            // It only opens the same StatusView as tapping the preview.
-            // --------------------------------------------------------------
 
             if (showDownloadButton)
               Positioned(
@@ -1235,8 +1226,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   ),
                 ),
               ),
-
-
           ],
         ),
       ),
@@ -1253,6 +1242,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
     required String message,
     bool showStatusInstructions = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+
     final isBusiness =
         _selectedSource == 'business';
 
@@ -1327,9 +1318,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'How to save a status',
-                    style: TextStyle(
+                  Text(
+                    l10n.howToSaveAStatus,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Colors.black,
@@ -1342,10 +1333,12 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                   _buildInstructionStep(
                     number: '1',
-                    title:
-                    'View a status on $whatsappName',
-                    description:
-                    'Open $whatsappName and view the photo or video status you want to save.',
+                    title: l10n.viewAStatusOn(
+                      whatsappName,
+                    ),
+                    description:l10n.openSourceAndViewStatus(
+                      whatsappName,
+                    ),
                   ),
 
                   const SizedBox(
@@ -1354,10 +1347,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                   _buildInstructionStep(
                     number: '2',
-                    title:
-                    'Open Save Statusly',
+                    title: l10n.openSaveStatusly,
                     description:
-                    'Return to Save Statusly after viewing the status.',
+                    l10n.returnToSaveStatuslyAfterViewing,
                   ),
 
                   const SizedBox(
@@ -1366,10 +1358,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                   _buildInstructionStep(
                     number: '3',
-                    title:
-                    'Save or download the status',
+                    title: l10n.saveOrDownloadTheStatus,
                     description:
-                    'The viewed status will appear here. Open it and tap the Save or Download button.',
+                    l10n.viewedStatusWillAppearHere,
                   ),
                 ],
               ),
@@ -1387,7 +1378,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   Icons.open_in_new,
                 ),
                 label: Text(
-                  'Open $whatsappName',
+                  l10n.openSource(
+                    whatsappName,
+                  ),
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor:
@@ -1411,7 +1404,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
       ),
     );
   }
-
 
   Widget _buildInstructionStep({
     required String number,
@@ -1476,14 +1468,13 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
-
-
-
   // ==========================================================================
   // STATUSES TAB
   // ==========================================================================
 
   Widget _buildStatusesTab() {
+    final l10n = AppLocalizations.of(context)!;
+
     final source = _selectedSource;
 
     if (source == null ||
@@ -1538,11 +1529,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
               return _loadStatuses(source);
             },
             emptyTitle: showingVideos
-                ? 'No videos found'
-                : 'No images found',
+                ? l10n.noVideosFound
+                : l10n.noImagesFound,
             emptyMessage: showingVideos
-                ? 'Video statuses will appear here.'
-                : 'Image statuses will appear here.',
+                ? l10n.videoStatusesWillAppearHere
+                : l10n.imageStatusesWillAppearHere,
             showStatusInstructions: true,
           ),
         ),
@@ -1555,14 +1546,22 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildSavedTab() {
+    final l10n = AppLocalizations.of(context)!;
+
     final showingVideos =
         _savedFilter == 'videos';
 
     final imagesCount =
-        _filterMedia(_savedStatuses, 'images').length;
+        _filterMedia(
+          _savedStatuses,
+          'images',
+        ).length;
 
     final videosCount =
-        _filterMedia(_savedStatuses, 'videos').length;
+        _filterMedia(
+          _savedStatuses,
+          'videos',
+        ).length;
 
     return Column(
       children: [
@@ -1591,11 +1590,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
             loading: _loadingSaved,
             onRefresh: _loadSavedStatuses,
             emptyTitle: showingVideos
-                ? 'No saved videos'
-                : 'No saved images',
+                ? l10n.noSavedVideos
+                : l10n.noSavedImages,
             emptyMessage: showingVideos
-                ? 'Videos you save will appear here.'
-                : 'Images you save will appear here.',
+                ? l10n.videosYouSaveWillAppearHere
+                : l10n.imagesYouSaveWillAppearHere,
             showDownloadButton: false,
           ),
         ),
@@ -1603,33 +1602,42 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
+  // ==========================================================================
+  // CONFIRM EXIT
+  // ==========================================================================
 
   Future<bool> _confirmExit() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Exit Statusly?',
-            style: TextStyle(
+          title: Text(
+            l10n.exitStatusly,
+            style: const TextStyle(
               fontWeight: FontWeight.w700,
             ),
           ),
-          content: const Text(
-            'Are you sure you want to close the app?',
+          content: Text(
+            l10n.areYouSureYouWantToCloseTheApp,
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(false);
               },
-              child: const Text('Cancel'),
+              child: Text(
+                l10n.cancel,
+              ),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
-              child: const Text('Exit'),
+              child: Text(
+                l10n.exit,
+              ),
             ),
           ],
         );
@@ -1645,7 +1653,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
+    final l10n = AppLocalizations.of(context)!;
 
     final showingStatuses =
         _currentTab == 0;
@@ -1660,7 +1668,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
           return;
         }
 
-        final shouldExit = await _confirmExit();
+        final shouldExit =
+        await _confirmExit();
 
         if (shouldExit) {
           SystemNavigator.pop();
@@ -1676,8 +1685,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
             showingStatuses
                 ? 'Statusly'
                 : showingSaved
-                ? 'Saved'
-                : 'Settings',
+                ? l10n.saved
+                : l10n.settings,
             style: const TextStyle(
               fontWeight: FontWeight.w700,
             ),
@@ -1687,7 +1696,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
               _buildSourceSelector(),
 
             IconButton(
-              tooltip: 'Open WhatsApp',
+              tooltip: l10n.openWhatsAppTooltip,
               onPressed: _openWhatsApp,
               icon: const Icon(
                 Icons.mark_chat_unread,
@@ -1706,7 +1715,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
         body: PageView(
           controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
+          physics:
+          const NeverScrollableScrollPhysics(),
           onPageChanged: (index) {
             if (_currentTab != index) {
               setState(() {
@@ -1721,12 +1731,20 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
             SettingsScreen(
               statusService: _statusService,
-              whatsappInstalled: _whatsappInstalled,
-              businessInstalled: _businessInstalled,
-              whatsappConfigured: _whatsappConfigured,
-              businessConfigured: _businessConfigured,
-              onSelectSource: _handleSettingsSource,
-              onOpenWhatsApp: _openWhatsApp,
+              whatsappInstalled:
+              _whatsappInstalled,
+              businessInstalled:
+              _businessInstalled,
+              whatsappConfigured:
+              _whatsappConfigured,
+              businessConfigured:
+              _businessConfigured,
+              onSelectSource:
+              _handleSettingsSource,
+              onOpenWhatsApp:
+              _openWhatsApp,
+              onLanguageChanged:
+              widget.onLanguageChanged,
             ),
           ],
         ),
@@ -1738,14 +1756,15 @@ class _StatusHomePageState extends State<StatusHomePage> {
         bottomNavigationBar:
         NavigationBar(
           selectedIndex: _currentTab,
-          onDestinationSelected: _changeTab,
+          onDestinationSelected:
+          _changeTab,
           destinations: [
             NavigationDestination(
               icon: const StatusIcon(),
               selectedIcon: const StatusIcon(
                 selected: true,
               ),
-              label: 'Statuses',
+              label: l10n.statuses,
             ),
 
             NavigationDestination(
@@ -1757,7 +1776,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 Icons.download,
                 size: 37,
               ),
-              label: 'Saved',
+              label: l10n.saved,
             ),
 
             NavigationDestination(
@@ -1767,7 +1786,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
               selectedIcon: const Icon(
                 Icons.settings,
               ),
-              label: 'Settings',
+              label: l10n.settings,
             ),
           ],
         ),

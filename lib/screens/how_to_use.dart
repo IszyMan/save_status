@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class HowToUseScreen extends StatelessWidget {
@@ -121,11 +122,12 @@ class HowToUseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'How to Use Statusly',
+          l10n.howToUseStatusly,
           style: TextStyle(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
@@ -146,7 +148,7 @@ class HowToUseScreen extends StatelessWidget {
           // ===================================================================
 
           Text(
-            'How to Use Statusly',
+            l10n.howToUseStatusly,
             style: TextStyle(
               fontSize: 25,
               fontWeight: FontWeight.w800,
@@ -157,8 +159,7 @@ class HowToUseScreen extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            'Save photos and videos from WhatsApp statuses directly '
-                'to your device.',
+            l10n.howToUseDescription,
             style: TextStyle(
               fontSize: 14,
               height: 1.55,
@@ -176,10 +177,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 1,
             icon: Icons.chat_rounded,
-            title: 'Choose WhatsApp',
-            description:
-            'Select WhatsApp or WhatsApp Business depending on the '
-                'status source you want to use.',
+            title: l10n.howToUseStep1Title,
+            description: l10n.howToUseStep1Description,
           ),
 
           // ===================================================================
@@ -190,11 +189,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 2,
             icon: Icons.folder_open_rounded,
-            title: 'Allow Statusly to access statuses',
-            description:
-            'Android will ask you to allow Statusly to access the '
-                'selected WhatsApp status folder. Follow the Android prompt '
-                'and confirm the folder selection.',
+            title: l10n.howToUseStep2Title,
+            description: l10n.howToUseStep2Description,
           ),
 
           // ===================================================================
@@ -205,10 +201,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 3,
             icon: Icons.photo_library_rounded,
-            title: 'View available statuses',
-            description:
-            'Once access is configured, Statusly will display available '
-                'status photos and videos in the Statuses tab.',
+            title: l10n.howToUseStep3Title,
+            description: l10n.howToUseStep3Description,
           ),
 
           // ===================================================================
@@ -219,10 +213,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 4,
             icon: Icons.play_circle_outline_rounded,
-            title: 'Open a status',
-            description:
-            'Tap a photo or video to view it. Videos can be played '
-                'directly inside Statusly.',
+            title: l10n.howToUseStep4Title,
+            description: l10n.howToUseStep4Description,
           ),
 
           // ===================================================================
@@ -233,10 +225,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 5,
             icon: Icons.download_rounded,
-            title: 'Save a status',
-            description:
-            'Use the save option when viewing a status to save the '
-                'selected photo or video to your device.',
+            title: l10n.howToUseStep5Title,
+            description: l10n.howToUseStep5Description,
           ),
 
           // ===================================================================
@@ -247,10 +237,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 6,
             icon: Icons.photo_library_outlined,
-            title: 'Find your saved media',
-            description:
-            'Saved photos and videos are available in the Saved tab '
-                'inside Statusly. They are also stored on your device.',
+            title: l10n.howToUseStep6Title,
+            description: l10n.howToUseStep6Description,
           ),
 
           // ===================================================================
@@ -261,10 +249,8 @@ class HowToUseScreen extends StatelessWidget {
             context: context,
             number: 7,
             icon: Icons.share_rounded,
-            title: 'Share a status',
-            description:
-            'Use the share option to send supported media through '
-                'other apps installed on your device.',
+            title: l10n.howToUseStep7Title,
+            description: l10n.howToUseStep7Description,
           ),
 
           const SizedBox(height: 8),
@@ -274,7 +260,7 @@ class HowToUseScreen extends StatelessWidget {
           // ===================================================================
 
           Text(
-            'Useful Tips',
+            l10n.howToUseUsefulTips,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -286,27 +272,22 @@ class HowToUseScreen extends StatelessWidget {
 
           _tip(
             context,
-            'If you use both WhatsApp and WhatsApp Business, configure '
-                'each source separately from Settings.',
+            l10n.howToUseTip1,
           ),
 
           _tip(
             context,
-            'Statusly does not upload your status photos or videos to a '
-                'Statusly server. Supported status media is processed locally '
-                'on your device.',
+            l10n.howToUseTip2,
           ),
 
           _tip(
             context,
-            'If a new status does not appear immediately, return to the '
-                'Statuses tab and refresh the list.',
+            l10n.howToUseTip3,
           ),
 
           _tip(
             context,
-            'Only save or share status media that you have permission or '
-                'authorization to use.',
+            l10n.howToUseTip4,
           ),
 
           const SizedBox(height: 12),
@@ -316,7 +297,7 @@ class HowToUseScreen extends StatelessWidget {
           // ===================================================================
 
           Text(
-            'Need Help?',
+            l10n.howToUseNeedHelp,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -327,8 +308,7 @@ class HowToUseScreen extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            'If you experience a problem while using Statusly, contact '
-                'support from the Settings screen.',
+            l10n.howToUseHelpDescription,
             style: TextStyle(
               fontSize: 14,
               height: 1.55,

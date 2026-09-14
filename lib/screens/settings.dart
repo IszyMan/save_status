@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/status_service.dart';
 import '../../theme/app_theme.dart';
 import 'how_to_use.dart';
+import 'language_selection_screen.dart';
 import 'privacy_policy.dart';
 import 'terms_conditions.dart';
 
@@ -19,6 +22,9 @@ class SettingsScreen extends StatelessWidget {
   final Future<void> Function(String source) onSelectSource;
   final Future<void> Function() onOpenWhatsApp;
 
+  // Called when the user selects a language.
+  final ValueChanged<Locale> onLanguageChanged;
+
   const SettingsScreen({
     super.key,
     required this.statusService,
@@ -28,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
     required this.businessConfigured,
     required this.onSelectSource,
     required this.onOpenWhatsApp,
+    required this.onLanguageChanged,
   });
 
   // ==========================================================================
@@ -43,10 +50,63 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ==========================================================================
+  // CURRENT LANGUAGE NAME
+  // ==========================================================================
+
+  Future<String> _getCurrentLanguageName() async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    final languageCode =
+        preferences.getString('selected_language') ?? 'en';
+
+    switch (languageCode) {
+      case 'es':
+        return 'Español';
+
+      case 'fr':
+        return 'Français';
+
+      case 'de':
+        return 'Deutsch';
+
+      case 'pt':
+        return 'Português';
+
+      case 'en':
+      default:
+        return 'English';
+    }
+  }
+
+  // ==========================================================================
+  // LANGUAGE
+  // ==========================================================================
+
+  Future<void> _openLanguageSelection(
+      BuildContext context,
+      ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LanguageSelectionScreen(
+          onLanguageSelected: (locale) {
+            onLanguageChanged(locale);
+          },
+          onCompleted: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
   // CONTACT SUPPORT
   // ==========================================================================
 
-  Future<void> _contactSupport(BuildContext context) async {
+  Future<void> _contactSupport(
+      BuildContext context,
+      ) async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'iszifyaws@gmail.com',
@@ -63,9 +123,10 @@ class SettingsScreen extends StatelessWidget {
 
       if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No email app was found on this device.',
+              AppLocalizations.of(context)!
+                  .noEmailAppFound,
             ),
           ),
         );
@@ -73,9 +134,10 @@ class SettingsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Unable to open your email app.',
+              AppLocalizations.of(context)!
+                  .unableToOpenEmail,
             ),
           ),
         );
@@ -89,14 +151,20 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         const SizedBox(height: 8),
 
-        const Text(
-          'General Settings',
-          style: TextStyle(
+        // ====================================================================
+        // GENERAL SETTINGS
+        // ====================================================================
+
+        Text(
+          l10n.generalSettings,
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
             color: AppColors.primary,
@@ -105,15 +173,56 @@ class SettingsScreen extends StatelessWidget {
 
         const SizedBox(height: 6),
 
-        const Text(
-          'Manage your WhatsApp status sources.',
-          style: TextStyle(
+        Text(
+          l10n.manageWhatsAppStatusSources,
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
           ),
         ),
 
         const SizedBox(height: 24),
+
+        // ====================================================================
+        // LANGUAGE
+        // ====================================================================
+
+        Card(
+          child: ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: Color(0x14128C7E),
+              child: Icon(
+                Icons.language_rounded,
+                color: AppColors.primaryDark,
+              ),
+            ),
+            title: Text(
+              l10n.language,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            subtitle: FutureBuilder<String>(
+              future: _getCurrentLanguageName(),
+              builder: (
+                  context,
+                  snapshot,
+                  ) {
+                return Text(
+                  snapshot.data ?? 'English',
+                );
+              },
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+            onTap: () => _openLanguageSelection(
+              context,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
 
         // ====================================================================
         // WHATSAPP SOURCES
@@ -153,14 +262,14 @@ class SettingsScreen extends StatelessWidget {
               Icons.open_in_new_rounded,
               color: AppColors.primaryDark,
             ),
-            title: const Text(
-              'Open WhatsApp',
-              style: TextStyle(
+            title: Text(
+              l10n.openWhatsApp,
+              style: const TextStyle(
                 fontWeight: FontWeight.w700,
               ),
             ),
-            subtitle: const Text(
-              'Return directly to WhatsApp',
+            subtitle: Text(
+              l10n.returnDirectlyToWhatsApp,
             ),
             trailing: const Icon(
               Icons.chevron_right,
@@ -190,14 +299,14 @@ class SettingsScreen extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-                title: const Text(
-                  'How to Use Statusly',
-                  style: TextStyle(
+                title: Text(
+                  l10n.howToUseStatusly,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: const Text(
-                  'Learn how to view and save statuses',
+                subtitle: Text(
+                  l10n.learnHowToViewAndSaveStatuses,
                 ),
                 trailing: const Icon(
                   Icons.chevron_right,
@@ -205,7 +314,8 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const HowToUseScreen(),
+                      builder: (_) =>
+                      const HowToUseScreen(),
                     ),
                   );
                 },
@@ -228,14 +338,14 @@ class SettingsScreen extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-                title: const Text(
-                  'Privacy Policy',
-                  style: TextStyle(
+                title: Text(
+                  l10n.privacyPolicy,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: const Text(
-                  'Learn how Statusly handles your information',
+                subtitle: Text(
+                  l10n.learnHowStatuslyHandlesInformation,
                 ),
                 trailing: const Icon(
                   Icons.chevron_right,
@@ -243,7 +353,8 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyScreen(),
+                      builder: (_) =>
+                      const PrivacyPolicyScreen(),
                     ),
                   );
                 },
@@ -266,14 +377,14 @@ class SettingsScreen extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-                title: const Text(
-                  'Terms & Conditions',
-                  style: TextStyle(
+                title: Text(
+                  l10n.termsAndConditions,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: const Text(
-                  'Read the terms for using Statusly',
+                subtitle: Text(
+                  l10n.readTermsForUsingStatusly,
                 ),
                 trailing: const Icon(
                   Icons.chevron_right,
@@ -281,7 +392,8 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const TermsConditionsScreen(),
+                      builder: (_) =>
+                      const TermsConditionsScreen(),
                     ),
                   );
                 },
@@ -304,19 +416,21 @@ class SettingsScreen extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-                title: const Text(
-                  'Contact Support',
-                  style: TextStyle(
+                title: Text(
+                  l10n.contactSupport,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: const Text(
-                  'Get help with Statusly',
+                subtitle: Text(
+                  l10n.getHelpWithStatusly,
                 ),
                 trailing: const Icon(
                   Icons.chevron_right,
                 ),
-                onTap: () => _contactSupport(context),
+                onTap: () => _contactSupport(
+                  context,
+                ),
               ),
             ],
           ),
@@ -337,9 +451,12 @@ class SettingsScreen extends StatelessWidget {
         required bool configured,
         required IconData icon,
       }) {
+    final l10n = AppLocalizations.of(context)!;
+
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+        backgroundColor:
+        AppColors.primary.withValues(alpha: 0.12),
         child: Icon(
           icon,
           color: AppColors.primaryDark,
@@ -353,11 +470,13 @@ class SettingsScreen extends StatelessWidget {
       ),
       subtitle: Text(
         configured
-            ? 'Status access is configured'
-            : 'Status folder needs to be configured',
+            ? l10n.statusAccessIsConfigured
+            : l10n.statusFolderNeedsConfiguration,
       ),
       trailing: Icon(
-        configured ? Icons.check_circle : Icons.chevron_right,
+        configured
+            ? Icons.check_circle
+            : Icons.chevron_right,
         color: configured
             ? AppColors.primaryDark
             : AppColors.textSecondary,

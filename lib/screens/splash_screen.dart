@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 class SplashScreen extends StatefulWidget {
   final Widget nextScreen;
 
@@ -110,6 +112,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final percentage = (_progress * 100).round();
 
     return Scaffold(
@@ -130,7 +133,9 @@ class _SplashScreenState extends State<SplashScreen> {
                     borderRadius: BorderRadius.circular(34),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.18),
+                        color: Colors.black.withValues(
+                          alpha: 0.18,
+                        ),
                         blurRadius: 28,
                         offset: const Offset(0, 12),
                       ),
@@ -162,10 +167,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 10),
 
-                const Text(
-                  'Status photos and video downloader',
+                Text(
+                  l10n.statusPhotosAndVideoDownloader,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 15,
                   ),
@@ -176,15 +181,17 @@ class _SplashScreenState extends State<SplashScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Loading...',
-                      style: TextStyle(
+                    Text(
+                      l10n.loading,
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+
                     const SizedBox(width: 8),
+
                     Text(
                       '$percentage%',
                       style: const TextStyle(
@@ -205,8 +212,12 @@ class _SplashScreenState extends State<SplashScreen> {
                     borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
                       value: _progress,
-                      backgroundColor: Colors.white.withValues(alpha: 0.18),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
+                      backgroundColor:
+                      Colors.white.withValues(
+                        alpha: 0.18,
+                      ),
+                      valueColor:
+                      const AlwaysStoppedAnimation<Color>(
                         progressColor,
                       ),
                     ),

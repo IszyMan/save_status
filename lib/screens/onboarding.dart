@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 class OnboardingScreen extends StatelessWidget {
   final VoidCallback onGetStarted;
 
@@ -34,6 +36,8 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF075E54),
       body: SafeArea(
@@ -72,6 +76,7 @@ class OnboardingScreen extends StatelessWidget {
 
               const SizedBox(height: 38),
 
+              // App Name
               const Text(
                 'Save Statusly',
                 textAlign: TextAlign.center,
@@ -85,10 +90,11 @@ class OnboardingScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              const Text(
-                'Save photos and videos from WhatsApp statuses.',
+              // Description
+              Text(
+                l10n.onboardingDescription,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 17,
                   height: 1.5,
@@ -97,6 +103,7 @@ class OnboardingScreen extends StatelessWidget {
 
               const Spacer(),
 
+              // Get Started
               SizedBox(
                 width: double.infinity,
                 height: 58,
@@ -110,9 +117,9 @@ class OnboardingScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  child: const Text(
-                    'Get Started',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.getStarted,
+                    style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
@@ -126,9 +133,9 @@ class OnboardingScreen extends StatelessWidget {
               Wrap(
                 alignment: WrapAlignment.center,
                 children: [
-                  const Text(
-                    'By continuing, you acknowledge our ',
-                    style: TextStyle(
+                  Text(
+                    '${l10n.byContinuingYouAcknowledgeOur} ',
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                       height: 1.45,
@@ -140,9 +147,9 @@ class OnboardingScreen extends StatelessWidget {
                     onTap: () {
                       _openUrl(privacyPolicyUrl);
                     },
-                    child: const Text(
-                      'Privacy Policy',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.privacyPolicy,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         height: 1.45,
@@ -153,9 +160,9 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const Text(
-                    ' and ',
-                    style: TextStyle(
+                  Text(
+                    ' ${l10n.and} ',
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                       height: 1.45,
@@ -167,9 +174,9 @@ class OnboardingScreen extends StatelessWidget {
                     onTap: () {
                       _openUrl(termsUrl);
                     },
-                    child: const Text(
-                      'Terms & Conditions',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.termsAndConditions,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         height: 1.45,

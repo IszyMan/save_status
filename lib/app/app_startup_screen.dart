@@ -1,54 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../screens/language_selection_screen.dart';
 import '../../screens/onboarding.dart';
 import '../../screens/splash_screen.dart';
 import '../screens/status_home_page.dart';
 
 class AppStartupScreen extends StatefulWidget {
-  const AppStartupScreen({super.key});
+  final ValueChanged<Locale> onLanguageSelected;
+
+  const AppStartupScreen({
+    super.key,
+    required this.onLanguageSelected,
+  });
 
   @override
-  State<AppStartupScreen> createState() => _AppStartupScreenState();
+  State<AppStartupScreen> createState() =>
+      _AppStartupScreenState();
 }
 
-class _AppStartupScreenState extends State<AppStartupScreen> {
+class _AppStartupScreenState
+    extends State<AppStartupScreen> {
   bool _checking = true;
+  bool _languageSelected = false;
   bool _onboardingCompleted = false;
 
   @override
   void initState() {
     super.initState();
-
-    _checkOnboarding();
+    _checkStartupState();
   }
 
-  Future<void> _checkOnboarding() async {
+  // ==========================================================================
+  // CHECK STARTUP STATE
+  // ==========================================================================
+
+  Future<void> _checkStartupState() async {
     try {
       final preferences =
       await SharedPreferences.getInstance();
 
+      final selectedLanguage =
+      preferences.getString(
+        'selected_language',
+      );
+
       final completed =
-          preferences.getBool('onboarding_completed') ?? false;
+          preferences.getBool(
+            'onboarding_completed',
+          ) ??
+              false;
 
       if (!mounted) return;
 
+      if (selectedLanguage != null &&
+          selectedLanguage.isNotEmpty) {
+        widget.onLanguageSelected(
+          Locale(selectedLanguage),
+        );
+      }
+
       setState(() {
+        _languageSelected =
+            selectedLanguage != null &&
+                selectedLanguage.isNotEmpty;
+
         _onboardingCompleted = completed;
         _checking = false;
       });
     } catch (e) {
       debugPrint(
-        'Unable to check onboarding status: $e',
+        'Unable to check startup state: $e',
       );
 
       if (!mounted) return;
 
       setState(() {
+        _languageSelected = false;
         _onboardingCompleted = false;
         _checking = false;
       });
     }
   }
+
+  // ==========================================================================
+  // LANGUAGE SELECTION
+  // ==========================================================================
+
+  void _completeLanguageSelection(
+      Locale locale,
+      ) {
+    widget.onLanguageSelected(locale);
+
+    if (!mounted) return;
+
+    setState(() {
+      _languageSelected = true;
+    });
+  }
+
+  // ==========================================================================
+  // ONBOARDING
+  // ==========================================================================
 
   Future<void> _completeOnboarding() async {
     try {
@@ -69,14 +122,20 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => const StatusHomePage(),
+        builder: (_) => StatusHomePage(
+          onLanguageChanged:
+          widget.onLanguageSelected,
+        ),
       ),
     );
   }
 
+  // ==========================================================================
+  // BUILD
+  // ==========================================================================
+
   @override
   Widget build(BuildContext context) {
-    // Still checking SharedPreferences.
     if (_checking) {
       return const Scaffold(
         backgroundColor: Color(0xFF075E54),
@@ -86,7 +145,8 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(
+              valueColor:
+              AlwaysStoppedAnimation<Color>(
                 Color(0xFF25D366),
               ),
             ),
@@ -95,21 +155,36 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       );
     }
 
-    // First launch:
-    // Show onboarding directly.
-    //
-    // IMPORTANT:
-    // Do NOT put onboarding inside SplashScreen.
+    // ------------------------------------------------------------------------
+    // FIRST LAUNCH: LANGUAGE SELECTION
+    // ------------------------------------------------------------------------
+
+    if (!_languageSelected) {
+      return LanguageSelectionScreen(
+        onLanguageSelected:
+        _completeLanguageSelection,
+      );
+    }
+
+    // ------------------------------------------------------------------------
+    // ONBOARDING
+    // ------------------------------------------------------------------------
+
     if (!_onboardingCompleted) {
       return OnboardingScreen(
         onGetStarted: _completeOnboarding,
       );
     }
 
-    // Returning user:
-    // Show splash, then go to StatusHomePage.
-    return const SplashScreen(
-      nextScreen: StatusHomePage(),
+    // ------------------------------------------------------------------------
+    // EXISTING USER
+    // ------------------------------------------------------------------------
+
+    return SplashScreen(
+      nextScreen: StatusHomePage(
+        onLanguageChanged:
+        widget.onLanguageSelected,
+      ),
     );
   }
 }

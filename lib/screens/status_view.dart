@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 class StatusView extends StatefulWidget {
   final String filePath;
   final Map<String, dynamic> status;
@@ -19,20 +21,15 @@ class StatusView extends StatefulWidget {
   });
 
   @override
-  State<StatusView> createState() =>
-      _StatusViewState();
+  State<StatusView> createState() => _StatusViewState();
 }
 
-class _StatusViewState
-    extends State<StatusView> {
-  static const MethodChannel
-  _channel =
-  MethodChannel(
+class _StatusViewState extends State<StatusView> {
+  static const MethodChannel _channel = MethodChannel(
     'com.iszyman.statusly/status',
   );
 
-  VideoPlayerController?
-  _videoController;
+  VideoPlayerController? _videoController;
 
   bool _initializing = true;
   bool _saving = false;
@@ -65,75 +62,65 @@ class _StatusViewState
     });
 
     try {
-      final result =
-      await _channel.invokeMethod(
+      final result = await _channel.invokeMethod(
         'saveStatus',
         {
-          'uri':
-          widget.status['uri'],
-          'name':
-          widget.status['name'],
-          'mimeType':
-          widget.status['mimeType'],
+          'uri': widget.status['uri'],
+          'name': widget.status['name'],
+          'mimeType': widget.status['mimeType'],
         },
       );
 
       if (!mounted) return;
 
-      final data =
-      result is Map
-          ? Map<String, dynamic>.from(
-        result,
-      )
+      final l10n = AppLocalizations.of(context)!;
+
+      final data = result is Map
+          ? Map<String, dynamic>.from(result)
           : <String, dynamic>{};
 
-      final alreadySaved =
-          data['alreadySaved'] == true;
+      final alreadySaved = data['alreadySaved'] == true;
 
       // The status is considered downloaded if Android reports
       // that it was saved now OR that it was already saved.
       widget.onSaved?.call();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             alreadySaved
-                ? 'Already saved to your gallery.'
-                : 'Saved to your gallery.',
+                ? l10n.alreadySavedToGallery
+                : l10n.savedToGallery,
           ),
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } on PlatformException catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      final l10n = AppLocalizations.of(context)!;
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.message ??
-                'Unable to save status.',
+            e.message ?? l10n.unableToSaveStatus,
           ),
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      final l10n = AppLocalizations.of(context)!;
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unable to save status: $e',
+            l10n.unableToSaveStatusWithError(
+              e.toString(),
+            ),
           ),
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
@@ -162,43 +149,38 @@ class _StatusViewState
       await _channel.invokeMethod(
         'shareStatus',
         {
-          'uri':
-          widget.status['uri'],
-          'name':
-          widget.status['name'],
-          'mimeType':
-          widget.status['mimeType'],
-          'filePath':
-          widget.filePath,
+          'uri': widget.status['uri'],
+          'name': widget.status['name'],
+          'mimeType': widget.status['mimeType'],
+          'filePath': widget.filePath,
         },
       );
     } on PlatformException catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      final l10n = AppLocalizations.of(context)!;
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.message ??
-                'Unable to share status.',
+            e.message ?? l10n.unableToShareStatus,
           ),
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      final l10n = AppLocalizations.of(context)!;
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unable to share status: $e',
+            l10n.unableToShareStatusWithError(
+              e.toString(),
+            ),
           ),
-          behavior:
-          SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
@@ -215,38 +197,32 @@ class _StatusViewState
   // ==========================================================================
 
   Future<void> _initializeVideo() async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
-      final file =
-      File(widget.filePath);
+      final file = File(widget.filePath);
 
       if (!await file.exists()) {
         throw Exception(
-          'Video file does not exist.',
+          l10n.videoFileDoesNotExist,
         );
       }
 
-      final size =
-      await file.length();
+      final size = await file.length();
 
       if (size <= 0) {
         throw Exception(
-          'Video file is empty.',
+          l10n.videoFileIsEmpty,
         );
       }
 
-      final controller =
-      VideoPlayerController.file(
-        file,
-      );
+      final controller = VideoPlayerController.file(file);
 
-      _videoController =
-          controller;
+      _videoController = controller;
 
       await controller.initialize();
 
-      await controller.setLooping(
-        true,
-      );
+      await controller.setLooping(true);
 
       await controller.play();
 
@@ -274,8 +250,7 @@ class _StatusViewState
     _videoController?.dispose();
 
     try {
-      final file =
-      File(widget.filePath);
+      final file = File(widget.filePath);
 
       if (file.existsSync()) {
         file.deleteSync();
@@ -290,41 +265,35 @@ class _StatusViewState
   // ==========================================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return Scaffold(
-      backgroundColor:
-      Colors.black,
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
+    return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor:
-        Colors.black,
-        foregroundColor:
-        Colors.white,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         title: Text(
-          widget.status['name']
-              ?.toString() ??
-              'Status',
+          widget.status['name']?.toString() ?? l10n.status,
           maxLines: 1,
-          overflow:
-          TextOverflow.ellipsis,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
-
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: Center(
-                child:
-                _buildContent(),
+                child: _buildContent(),
               ),
             ),
-
-            if (!_initializing &&
-                _error == null)
-              _buildActionBar(),
+            if (!_initializing && _error == null)
+              _buildActionBar(
+                context,
+                colorScheme,
+                l10n,
+              ),
           ],
         ),
       ),
@@ -335,11 +304,14 @@ class _StatusViewState
   // DOWNLOAD + SHARE BUTTONS
   // ==========================================================================
 
-  Widget _buildActionBar() {
+  Widget _buildActionBar(
+      BuildContext context,
+      ColorScheme colorScheme,
+      AppLocalizations l10n,
+      ) {
     return Container(
       width: double.infinity,
-      padding:
-      const EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         16,
         12,
         16,
@@ -349,8 +321,7 @@ class _StatusViewState
         color: Colors.black,
         border: Border(
           top: BorderSide(
-            color: Colors.white
-                .withValues(alpha: 0.12),
+            color: Colors.white.withValues(alpha: 0.12),
           ),
         ),
       ),
@@ -360,75 +331,57 @@ class _StatusViewState
             child: SizedBox(
               height: 50,
               child: FilledButton.icon(
-                onPressed:
-                _saving
-                    ? null
-                    : _saveStatus,
+                onPressed: _saving ? null : _saveStatus,
                 icon: _saving
                     ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child:
-                  CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color:
-                    Colors.white,
+                    color: Colors.white,
                   ),
                 )
                     : const Icon(
-                  Icons
-                      .download_rounded,
+                  Icons.download_rounded,
                 ),
                 label: Text(
                   _saving
-                      ? 'Saving...'
-                      : 'Download',
+                      ? l10n.saving
+                      : l10n.download,
                 ),
               ),
             ),
           ),
-
           const SizedBox(
             width: 12,
           ),
-
           Expanded(
             child: SizedBox(
               height: 50,
-              child:
-              OutlinedButton.icon(
-                onPressed:
-                _sharing
-                    ? null
-                    : _shareStatus,
-                style:
-                OutlinedButton.styleFrom(
-                  foregroundColor:
-                  Colors.white,
+              child: OutlinedButton.icon(
+                onPressed: _sharing ? null : _shareStatus,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
                   side: BorderSide(
-                    color: Colors.white
-                        .withValues(alpha: 0.55),
+                    color: Colors.white.withValues(alpha: 0.55),
                   ),
                 ),
                 icon: _sharing
                     ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child:
-                  CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color:
-                    Colors.white,
+                    color: Colors.white,
                   ),
                 )
                     : const Icon(
-                  Icons
-                      .share_rounded,
+                  Icons.share_rounded,
                 ),
                 label: Text(
                   _sharing
-                      ? 'Sharing...'
-                      : 'Share',
+                      ? l10n.sharing
+                      : l10n.share,
                 ),
               ),
             ),
@@ -451,16 +404,13 @@ class _StatusViewState
 
     if (_error != null) {
       return Padding(
-        padding:
-        const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize:
-          MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
               Icons.error_outline,
-              color:
-              Colors.white70,
+              color: Colors.white70,
               size: 48,
             ),
             const SizedBox(
@@ -468,10 +418,8 @@ class _StatusViewState
             ),
             Text(
               _error!,
-              textAlign:
-              TextAlign.center,
-              style:
-              const TextStyle(
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 color: Colors.white,
               ),
             ),
@@ -481,13 +429,14 @@ class _StatusViewState
     }
 
     if (widget.isVideo) {
-      final controller =
-          _videoController;
+      final controller = _videoController;
 
       if (controller == null) {
-        return const Text(
-          'Unable to play video.',
-          style: TextStyle(
+        final l10n = AppLocalizations.of(context)!;
+
+        return Text(
+          l10n.unableToPlayVideo,
+          style: const TextStyle(
             color: Colors.white,
           ),
         );
@@ -495,9 +444,7 @@ class _StatusViewState
 
       return GestureDetector(
         onTap: () {
-          if (controller
-              .value
-              .isPlaying) {
+          if (controller.value.isPlaying) {
             controller.pause();
           } else {
             controller.play();
@@ -512,28 +459,16 @@ class _StatusViewState
               context,
               constraints,
               ) {
-            final width =
-                controller
-                    .value
-                    .size
-                    .width;
+            final width = controller.value.size.width;
+            final height = controller.value.size.height;
 
-            final height =
-                controller
-                    .value
-                    .size
-                    .height;
-
-            if (width <= 0 ||
-                height <= 0) {
-              return const SizedBox
-                  .shrink();
+            if (width <= 0 || height <= 0) {
+              return const SizedBox.shrink();
             }
 
             return Center(
               child: AspectRatio(
-                aspectRatio:
-                width / height,
+                aspectRatio: width / height,
                 child: VideoPlayer(
                   controller,
                 ),

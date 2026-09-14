@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class MediaFilterBar extends StatelessWidget {
@@ -19,6 +20,8 @@ class MediaFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(
@@ -27,7 +30,7 @@ class MediaFilterBar extends StatelessWidget {
       child: Row(
         children: [
           _MediaFilterChip(
-            label: 'Images',
+            label: l10n.images,
             count: imagesCount,
             value: 'images',
             selected: selectedFilter == 'images',
@@ -39,7 +42,7 @@ class MediaFilterBar extends StatelessWidget {
           ),
 
           _MediaFilterChip(
-            label: 'Videos',
+            label: l10n.videos,
             count: videosCount,
             value: 'videos',
             selected: selectedFilter == 'videos',
