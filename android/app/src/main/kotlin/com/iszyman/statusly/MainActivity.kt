@@ -70,6 +70,71 @@ class MainActivity : FlutterActivity() {
 
             when (call.method) {
 
+
+                // =====================================================
+// SET APP LANGUAGE
+// =====================================================
+
+                "setAppLanguage" -> {
+
+                    val language =
+                        call.argument<String>("language")
+
+                    if (language.isNullOrEmpty()) {
+
+                        result.error(
+                            "INVALID_LANGUAGE",
+                            "Language code is missing",
+                            null
+                        )
+
+                        return@setMethodCallHandler
+                    }
+
+                    val normalizedLanguage =
+                        language
+                            .lowercase()
+                            .substringBefore("-")
+
+                    val supportedLanguages =
+                        setOf(
+                            "en",
+                            "es",
+                            "fr",
+                            "de",
+                            "pt"
+                        )
+
+                    if (!supportedLanguages.contains(normalizedLanguage)) {
+
+                        result.error(
+                            "UNSUPPORTED_LANGUAGE",
+                            "Unsupported language: $normalizedLanguage",
+                            null
+                        )
+
+                        return@setMethodCallHandler
+                    }
+
+                    getSharedPreferences(
+                        "status_saver",
+                        MODE_PRIVATE
+                    )
+                        .edit()
+                        .putString(
+                            "selected_language",
+                            normalizedLanguage
+                        )
+                        .apply()
+
+                    Log.d(
+                        "STATUS_DEBUG",
+                        "Statusly language saved: $normalizedLanguage"
+                    )
+
+                    result.success(true)
+                }
+
                 // =====================================================
                 // GET APP STATE
                 // =====================================================

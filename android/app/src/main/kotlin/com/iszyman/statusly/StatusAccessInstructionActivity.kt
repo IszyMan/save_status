@@ -136,8 +136,7 @@ class StatusAccessInstructionActivity : Activity() {
         val message =
             TextView(this).apply {
 
-                text =
-                    "Press \"USE THIS FOLDER\" to save statuses"
+                text = StatusAccessTranslations.message(this@StatusAccessInstructionActivity)
 
                 setTextColor(
                     Color.rgb(
@@ -202,8 +201,7 @@ class StatusAccessInstructionActivity : Activity() {
         val fakeButton =
             TextView(this).apply {
 
-                text =
-                    "USE THIS FOLDER"
+                text = StatusAccessTranslations.button(this@StatusAccessInstructionActivity)
 
                 setTextColor(
                     Color.WHITE

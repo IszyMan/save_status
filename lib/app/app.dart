@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -16,10 +17,26 @@ class _StatusSaverAppState
     extends State<StatusSaverApp> {
   Locale? _locale;
 
-  void changeLanguage(Locale locale) {
+  Future<void> changeLanguage(Locale locale) async {
     setState(() {
       _locale = locale;
     });
+
+    try {
+      const channel =
+      MethodChannel('com.iszyman.statusly/status');
+
+      await channel.invokeMethod(
+        'setAppLanguage',
+        {
+          'language': locale.languageCode,
+        },
+      );
+    } catch (e) {
+      debugPrint(
+        'Unable to synchronize app language with Android: $e',
+      );
+    }
   }
 
   @override
@@ -27,7 +44,7 @@ class _StatusSaverAppState
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      title: 'Save Statusly',
+      title: 'Status Saver',
 
       // ----------------------------------------------------------------------
       // THEME
