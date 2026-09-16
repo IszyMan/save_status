@@ -197,23 +197,17 @@ class _StatusViewState extends State<StatusView> {
   // ==========================================================================
 
   Future<void> _initializeVideo() async {
-    final l10n = AppLocalizations.of(context)!;
-
     try {
       final file = File(widget.filePath);
 
       if (!await file.exists()) {
-        throw Exception(
-          l10n.videoFileDoesNotExist,
-        );
+        throw Exception('VIDEO_FILE_NOT_FOUND');
       }
 
       final size = await file.length();
 
       if (size <= 0) {
-        throw Exception(
-          l10n.videoFileIsEmpty,
-        );
+        throw Exception('VIDEO_FILE_EMPTY');
       }
 
       final controller = VideoPlayerController.file(file);
@@ -221,22 +215,32 @@ class _StatusViewState extends State<StatusView> {
       _videoController = controller;
 
       await controller.initialize();
-
       await controller.setLooping(true);
-
       await controller.play();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _initializing = false;
+        _error = null;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _initializing = false;
-        _error = e.toString();
+
+        if (e.toString().contains('VIDEO_FILE_NOT_FOUND')) {
+          _error = 'VIDEO_FILE_NOT_FOUND';
+        } else if (e.toString().contains('VIDEO_FILE_EMPTY')) {
+          _error = 'VIDEO_FILE_EMPTY';
+        } else {
+          _error = e.toString();
+        }
       });
     }
   }
@@ -275,9 +279,7 @@ class _StatusViewState extends State<StatusView> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(
-          widget.status['name']?.toString() ?? l10n.status,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          widget.isVideo ? 'Video' : 'Photo',
         ),
       ),
       body: SafeArea(

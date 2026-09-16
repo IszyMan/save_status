@@ -479,7 +479,7 @@ abstract class AppLocalizations {
   /// No description provided for @images.
   ///
   /// In en, this message translates to:
-  /// **'Images'**
+  /// **'Photos'**
   String get images;
 
   /// No description provided for @videos.

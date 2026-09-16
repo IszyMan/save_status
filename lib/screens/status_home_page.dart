@@ -972,6 +972,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
       return const SizedBox.shrink();
     }
 
+    // Only one source is configured.
     if (configuredSources.length == 1) {
       return Padding(
         padding: const EdgeInsets.only(
@@ -979,10 +980,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
         ),
         child: Center(
           child: Text(
-            _sourceName(source),
+            source == 'business' ? 'Business' : 'WhatsApp',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -990,6 +990,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
       );
     }
 
+    // Both WhatsApp and WhatsApp Business are configured.
     return Padding(
       padding: const EdgeInsets.only(
         right: 4,
@@ -1018,7 +1019,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                     Expanded(
                       child: Text(
-                        _sourceName(item),
+                        item == 'business' ? 'Business' : 'WhatsApp',
                       ),
                     ),
 
@@ -1040,7 +1041,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
             vertical: 7,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
+            color: Colors.white.withValues(
+              alpha: 0.18,
+            ),
             borderRadius:
             BorderRadius.circular(10),
           ),
@@ -1048,7 +1051,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _sourceName(source),
+                source == 'business' ? 'Business' : 'WhatsApp',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -1067,6 +1070,41 @@ class _StatusHomePageState extends State<StatusHomePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+
+
+  Widget _buildRefreshButton() {
+    final source = _selectedSource;
+
+    if (source == null ||
+        !_isConfigured(source)) {
+      return const SizedBox.shrink();
+    }
+
+    return IconButton(
+      onPressed: _loadingStatuses
+          ? null
+          : () {
+        _loadStatuses(source);
+      },
+      icon: _loadingStatuses
+          ? const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor:
+          AlwaysStoppedAnimation<Color>(
+            Colors.white,
+          ),
+        ),
+      )
+          : const Icon(
+        Icons.refresh,
+        color: Colors.white,
       ),
     );
   }
@@ -1692,8 +1730,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
             ),
           ),
           actions: [
-            if (showingStatuses)
+            if (showingStatuses) ...[
               _buildSourceSelector(),
+
+              _buildRefreshButton(),
+            ],
 
             IconButton(
               tooltip: l10n.openWhatsAppTooltip,

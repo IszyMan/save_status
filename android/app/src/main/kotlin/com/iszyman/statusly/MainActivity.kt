@@ -242,6 +242,7 @@ class MainActivity : FlutterActivity() {
 
                     folderPickerResult = result
 
+
                     val intent =
                         Intent(
                             Intent.ACTION_OPEN_DOCUMENT_TREE
@@ -276,13 +277,6 @@ class MainActivity : FlutterActivity() {
 
                         } catch (e: Exception) {
 
-                            Log.e(
-                                "STATUS_DEBUG",
-                                "Failed to build Android/media tree URI. " +
-                                        "source=$source",
-                                e
-                            )
-
                             null
                         }
 
@@ -303,31 +297,9 @@ class MainActivity : FlutterActivity() {
 
                         } catch (e: Exception) {
 
-                            Log.e(
-                                "STATUS_DEBUG",
-                                "Failed to build initial status document URI. " +
-                                        "source=$source",
-                                e
-                            )
-
                             null
                         }
 
-                    // =========================================================
-                    // DEBUG
-                    //
-                    // Keep this log for now so we can verify the production
-                    // implementation one final time.
-                    // =========================================================
-
-                    Log.d(
-                        "STATUS_DEBUG",
-                        "STATUS FOLDER INITIAL URI | " +
-                                "source=$source | " +
-                                "parentTreeUri=$parentTreeUri | " +
-                                "documentId=$statusDocumentId | " +
-                                "initialUri=$initialUri"
-                    )
 
                     // =========================================================
                     // TELL ANDROID DOCUMENTSUI WHERE TO START
@@ -371,14 +343,15 @@ class MainActivity : FlutterActivity() {
                         requestCode
                     )
 
-// =========================================================
-// SHOW OUR TRANSPARENT INSTRUCTION ABOVE DOCUMENTSUI
-//
-// IMPORTANT:
-// This does NOT replace Android's folder picker.
-// It only sits above it and explains what the user should
-// press next.
-// =========================================================
+
+                    // =========================================================
+                    // SHOW OUR TRANSPARENT INSTRUCTION ABOVE DOCUMENTSUI
+                    //
+                    // IMPORTANT:
+                    // This does NOT replace Android's folder picker.
+                    // It only sits above it and explains what the user should
+                    // press next.
+                    // =========================================================
 
                     try {
 
@@ -1981,14 +1954,27 @@ class MainActivity : FlutterActivity() {
     // ACTIVITY RESULT
     // =============================================================
 
-    @Deprecated(
-        "Deprecated in Android API"
-    )
+    // =============================================================
+// ACTIVITY RESULT
+// =============================================================
+
+    @Deprecated("Deprecated in Android API")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,
         data: Intent?
     ) {
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "SAF onActivityResult | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "requestCode=$requestCode | " +
+                    "resultCode=$resultCode | " +
+                    "dataUri=${data?.data} | " +
+                    "dataFlags=${data?.flags} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+
         super.onActivityResult(
             requestCode,
             resultCode,
@@ -1997,23 +1983,34 @@ class MainActivity : FlutterActivity() {
 
         val source =
             when (requestCode) {
-                WHATSAPP_FOLDER_PICKER_REQUEST -> "whatsapp"
-                BUSINESS_FOLDER_PICKER_REQUEST -> "business"
-                else -> return
+                WHATSAPP_FOLDER_PICKER_REQUEST ->
+                    "whatsapp"
+
+                BUSINESS_FOLDER_PICKER_REQUEST ->
+                    "business"
+
+                else ->
+                    return
             }
 
-        val result =
+        /*
+         * Keep a local reference to the Flutter callback.
+         *
+         * This can be null if Android recreated MainActivity while
+         * DocumentsUI was open. A null callback must not prevent us
+         * from saving the selected folder permission.
+         */
+        val flutterResult =
             folderPickerResult
-
 
         folderPickerResult = null
 
-        if (result == null) {
-            Log.e(
+        if (flutterResult == null) {
+            Log.w(
                 "STATUS_DEBUG",
-                "Folder picker returned but MethodChannel result was null"
+                "Flutter callback was lost, but the SAF result will still be processed. " +
+                        "source=$source"
             )
-            return
         }
 
         if (resultCode != Activity.RESULT_OK) {
@@ -2022,7 +2019,7 @@ class MainActivity : FlutterActivity() {
                 "Folder picker cancelled. source=$source"
             )
 
-            result.success(false)
+            flutterResult?.success(false)
             return
         }
 
@@ -2032,23 +2029,10 @@ class MainActivity : FlutterActivity() {
         if (treeUri == null) {
             Log.e(
                 "STATUS_DEBUG",
-                "Folder picker returned RESULT_OK but URI was null"
+                "Folder picker returned RESULT_OK but URI was null. source=$source"
             )
 
-            result.success(false)
-            return
-        }
-
-        if (
-            source != "whatsapp" &&
-            source != "business"
-        ) {
-            Log.e(
-                "STATUS_DEBUG",
-                "Invalid folder picker source: $source"
-            )
-
-            result.success(false)
+            flutterResult?.success(false)
             return
         }
 
@@ -2057,12 +2041,23 @@ class MainActivity : FlutterActivity() {
             "Selected folder. source=$source uri=$treeUri"
         )
 
+        // =========================================================
+        // VERIFY THAT THE SELECTED FOLDER IS .STATUSES
+        // =========================================================
+
         val displayName =
             try {
-                DocumentsContract.getTreeDocumentId(treeUri)
+                DocumentsContract
+                    .getTreeDocumentId(treeUri)
                     .substringAfterLast("/")
                     .substringAfterLast(":")
             } catch (e: Exception) {
+                Log.e(
+                    "STATUS_DEBUG",
+                    "Could not determine selected folder name",
+                    e
+                )
+
                 ""
             }
 
@@ -2074,16 +2069,23 @@ class MainActivity : FlutterActivity() {
         ) {
             Log.e(
                 "STATUS_DEBUG",
-                "Rejected folder because it is not .Statuses. source=$source uri=$treeUri"
+                "Rejected folder because it is not .Statuses. " +
+                        "source=$source uri=$treeUri"
             )
 
-            result.success(false)
+            flutterResult?.success(false)
             return
         }
 
+        // =========================================================
+        // VERIFY WHATSAPP OR WHATSAPP BUSINESS PATH
+        // =========================================================
+
         val documentId =
             try {
-                DocumentsContract.getTreeDocumentId(treeUri)
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
             } catch (e: Exception) {
                 Log.e(
                     "STATUS_DEBUG",
@@ -2091,7 +2093,7 @@ class MainActivity : FlutterActivity() {
                     e
                 )
 
-                result.success(false)
+                flutterResult?.success(false)
                 return
             }
 
@@ -2123,12 +2125,17 @@ class MainActivity : FlutterActivity() {
         if (!isCorrectSource) {
             Log.e(
                 "STATUS_DEBUG",
-                "Rejected wrong source folder. source=$source documentId=$documentId"
+                "Rejected wrong source folder. " +
+                        "source=$source documentId=$documentId"
             )
 
-            result.success(false)
+            flutterResult?.success(false)
             return
         }
+
+        // =========================================================
+        // PERSIST READ PERMISSION
+        // =========================================================
 
         try {
             val takeFlags =
@@ -2138,27 +2145,40 @@ class MainActivity : FlutterActivity() {
                                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                                 )
 
-            contentResolver.takePersistableUriPermission(
-                treeUri,
+            val readFlags =
                 takeFlags and
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
+
+            if (readFlags == 0) {
+                Log.e(
+                    "STATUS_DEBUG",
+                    "Android did not return read permission. " +
+                            "source=$source flags=${data.flags}"
+                )
+
+                flutterResult?.success(false)
+                return
+            }
+
+            contentResolver.takePersistableUriPermission(
+                treeUri,
+                readFlags
             )
         } catch (e: Exception) {
             Log.e(
                 "STATUS_DEBUG",
-                "Could not persist folder permission. source=$source uri=$treeUri",
+                "Could not persist folder permission. " +
+                        "source=$source uri=$treeUri",
                 e
             )
 
-            result.success(false)
+            flutterResult?.success(false)
             return
         }
 
-        val preferences =
-            getSharedPreferences(
-                "status_saver",
-                MODE_PRIVATE
-            )
+        // =========================================================
+        // SAVE CONFIGURATION
+        // =========================================================
 
         val preferenceKey =
             if (source == "business") {
@@ -2167,26 +2187,48 @@ class MainActivity : FlutterActivity() {
                 "whatsapp_status_folder_uri"
             }
 
-        preferences
-            .edit()
-            .putString(
-                preferenceKey,
-                treeUri.toString()
+        val saved =
+            getSharedPreferences(
+                "status_saver",
+                MODE_PRIVATE
             )
-            .putString(
-                "last_selected_source",
-                source
+                .edit()
+                .putString(
+                    preferenceKey,
+                    treeUri.toString()
+                )
+                .putString(
+                    "last_selected_source",
+                    source
+                )
+                .commit()
+
+        if (!saved) {
+            Log.e(
+                "STATUS_DEBUG",
+                "Failed to save folder URI to SharedPreferences. " +
+                        "source=$source"
             )
-            .apply()
+
+            flutterResult?.success(false)
+            return
+        }
 
         Log.d(
             "STATUS_DEBUG",
-            "Saved folder successfully. source=$source key=$preferenceKey uri=$treeUri"
+            "Saved folder successfully. " +
+                    "source=$source key=$preferenceKey uri=$treeUri " +
+                    "flutterCallbackAvailable=${flutterResult != null}"
         )
 
         logPersistedUriPermissions()
 
-        result.success(true)
+        /*
+         * If Flutter survived, complete its pending Future normally.
+         * If Flutter restarted, the configuration has still been saved
+         * and getAppState() will detect it during startup.
+         */
+        flutterResult?.success(true)
     }
 
     // =============================================================
@@ -2471,11 +2513,76 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "MainActivity onCreate | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "savedInstanceState=${savedInstanceState != null} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "MainActivity onStart | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "MainActivity onResume | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+    }
+
+    override fun onPause() {
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "MainActivity onPause | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+
+        super.onPause()
+    }
+
+    override fun onStop() {
+        Log.d(
+            "STATUS_LIFECYCLE",
+            "MainActivity onStop | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
+
+        super.onStop()
+    }
+
     // =============================================================
     // CLEAN UP
     // =============================================================
 
     override fun onDestroy() {
+
+        Log.e(
+            "STATUS_LIFECYCLE",
+            "MainActivity onDestroy | " +
+                    "instance=${System.identityHashCode(this)} | " +
+                    "folderPickerResultExists=${folderPickerResult != null}"
+        )
 
         backgroundExecutor.shutdown()
 

@@ -1,7 +1,20 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// Load signing properties
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(
+        FileInputStream(keystorePropertiesFile)
+    )
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -30,11 +43,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias =
+                keystoreProperties["keyAlias"] as String
+            keyPassword =
+                keystoreProperties["keyPassword"] as String
+            storeFile =
+                file(
+                    keystoreProperties["storeFile"] as String
+                )
+            storePassword =
+                keystoreProperties["storePassword"] as String
+        }
+    }
+
     buildTypes {
         release {
-            // Temporary signing configuration.
-            // We will replace this with your Play Store upload key before release.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig =
+                signingConfigs.getByName("release")
         }
     }
 }

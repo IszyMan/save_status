@@ -2,26 +2,21 @@ package com.iszyman.statusly
 
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
 import android.view.View
-import android.view.Window
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 
 class StatusAccessInstructionActivity : Activity() {
 
-    private val handler =
-        Handler(Looper.getMainLooper())
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
-
-        requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         window.setBackgroundDrawableResource(
             android.R.color.transparent
@@ -136,7 +131,10 @@ class StatusAccessInstructionActivity : Activity() {
         val message =
             TextView(this).apply {
 
-                text = StatusAccessTranslations.message(this@StatusAccessInstructionActivity)
+                text =
+                    StatusAccessTranslations.message(
+                        this@StatusAccessInstructionActivity
+                    )
 
                 setTextColor(
                     Color.rgb(
@@ -153,7 +151,7 @@ class StatusAccessInstructionActivity : Activity() {
 
                 setTypeface(
                     null,
-                    android.graphics.Typeface.BOLD
+                    Typeface.BOLD
                 )
 
                 setPadding(
@@ -201,20 +199,27 @@ class StatusAccessInstructionActivity : Activity() {
         val fakeButton =
             TextView(this).apply {
 
-                text = StatusAccessTranslations.button(this@StatusAccessInstructionActivity)
+                text =
+                    StatusAccessTranslations.button(
+                        this@StatusAccessInstructionActivity
+                    )
 
                 setTextColor(
                     Color.WHITE
                 )
 
-                textSize = 16f
+                textSize = 15f
+
+                maxLines = 1
+
+                setHorizontallyScrolling(false)
 
                 gravity =
                     Gravity.CENTER
 
                 setTypeface(
                     null,
-                    android.graphics.Typeface.BOLD
+                    Typeface.BOLD
                 )
 
                 background =
@@ -236,9 +241,9 @@ class StatusAccessInstructionActivity : Activity() {
                     }
 
                 setPadding(
-                    32,
+                    16,
                     0,
-                    32,
+                    16,
                     0
                 )
 
@@ -246,8 +251,8 @@ class StatusAccessInstructionActivity : Activity() {
 
                 setOnClickListener {
 
-                    // This button is only the instruction.
-                    // It does NOT grant Android permission.
+                    // This button only closes the instruction.
+                    // Android's real button grants the folder permission.
                     finish()
                 }
             }
@@ -344,6 +349,10 @@ class StatusAccessInstructionActivity : Activity() {
         animateFinger(finger)
     }
 
+    // =============================================================
+    // FINGER ANIMATION
+    // =============================================================
+
     private fun animateFinger(
         finger: TextView
     ) {
@@ -366,12 +375,5 @@ class StatusAccessInstructionActivity : Activity() {
                     .start()
             }
             .start()
-    }
-
-    override fun onDestroy() {
-
-        handler.removeCallbacksAndMessages(null)
-
-        super.onDestroy()
     }
 }

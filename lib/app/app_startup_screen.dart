@@ -28,6 +28,12 @@ class _AppStartupScreenState
   @override
   void initState() {
     super.initState();
+
+    debugPrint(
+      'STATUS_STARTUP: AppStartupScreen initState '
+          'instance=$hashCode',
+    );
+
     _checkStartupState();
   }
 
@@ -51,6 +57,12 @@ class _AppStartupScreenState
           ) ??
               false;
 
+      debugPrint(
+        'STATUS_STARTUP: '
+            'selectedLanguage=$selectedLanguage | '
+            'onboardingCompleted=$completed',
+      );
+
       if (!mounted) return;
 
       if (selectedLanguage != null &&
@@ -68,6 +80,11 @@ class _AppStartupScreenState
         _onboardingCompleted = completed;
         _checking = false;
       });
+      debugPrint(
+        'STATUS_STARTUP: decision | '
+            'languageSelected=$_languageSelected | '
+            'onboardingCompleted=$_onboardingCompleted',
+      );
     } catch (e) {
       debugPrint(
         'Unable to check startup state: $e',

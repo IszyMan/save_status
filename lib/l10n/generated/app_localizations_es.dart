@@ -224,7 +224,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get images => 'Imágenes';
+  String get images => 'Fotos';
 
   @override
   String get videos => 'Vídeos';
