@@ -5,10 +5,14 @@ import '../l10n/generated/app_localizations.dart';
 
 class OnboardingScreen extends StatelessWidget {
   final VoidCallback onGetStarted;
+  final ValueChanged<Locale> onLanguageSelected;
+  final bool busy;
 
   const OnboardingScreen({
     super.key,
     required this.onGetStarted,
+    required this.onLanguageSelected,
+    this.busy = false,
   });
 
   static const String privacyPolicyUrl =
@@ -34,6 +38,104 @@ class OnboardingScreen extends StatelessWidget {
     }
   }
 
+  String _languageName(String code) {
+    switch (code) {
+      case 'es':
+        return 'Español';
+      case 'fr':
+        return 'Français';
+      case 'de':
+        return 'Deutsch';
+      case 'pt':
+        return 'Português';
+      default:
+        return 'English';
+    }
+  }
+
+  Widget _buildLanguageSelector(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context);
+
+    // Use the actual locales supported by your generated translations.
+    // Show one entry per language.
+    final languages = <String, Locale>{};
+
+    // Put English first.
+    for (final locale in AppLocalizations.supportedLocales) {
+      if (locale.languageCode == 'en') {
+        languages.putIfAbsent('en', () => locale);
+      }
+    }
+
+    // Add the remaining languages.
+    for (final locale in AppLocalizations.supportedLocales) {
+      languages.putIfAbsent(locale.languageCode, () => locale);
+    }
+
+    final selectedCode = languages.containsKey(
+      currentLocale.languageCode,
+    )
+        ? currentLocale.languageCode
+        : languages.keys.first;
+
+    return Align(
+      alignment: AlignmentDirectional.centerEnd,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.language_rounded,
+              color: Color(0xFF075E54),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedCode,
+                dropdownColor: Colors.white,
+                iconEnabledColor: const Color(0xFF075E54),
+                iconDisabledColor: Colors.grey,
+                borderRadius: BorderRadius.circular(14),
+                style: const TextStyle(
+                  color: Color(0xFF075E54),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                hint: Text(l10n.chooseLanguage),
+                items: languages.entries.map((entry) {
+                  return DropdownMenuItem<String>(
+                    value: entry.key,
+                    child: Text(_languageName(entry.key)),
+                  );
+                }).toList(),
+                onChanged: busy
+                    ? null
+                    : (code) {
+                  if (code == null) return;
+                  onLanguageSelected(languages[code]!);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -47,6 +149,11 @@ class OnboardingScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+
+              const SizedBox(height: 12),
+
+              _buildLanguageSelector(context),
+
               const Spacer(),
 
               // App Logo
@@ -108,7 +215,7 @@ class OnboardingScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton(
-                  onPressed: onGetStarted,
+                  onPressed: busy ? null : onGetStarted,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF25D366),
                     foregroundColor: Colors.white,
@@ -117,7 +224,16 @@ class OnboardingScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  child: Text(
+                  child: busy
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                      : Text(
                     l10n.getStarted,
                     style: const TextStyle(
                       fontSize: 17,

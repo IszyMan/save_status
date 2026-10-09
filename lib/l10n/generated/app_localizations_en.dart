@@ -962,4 +962,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete => 'Delete';
+
+  @override
+  String get setupFolderInstructions =>
+      '**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses.';
 }

@@ -304,5 +304,6 @@
   "allowAccessButton": "Permitir acesso 👈",
   "repost": "Repostar",
   "save": "Salvar",
-  "delete": "Excluir"
+  "delete": "Excluir",
+  "setupFolderInstructions": "**Só mais um passo!** Escolha seu aplicativo abaixo. Quando a orientação fechar, toque em **Usar esta pasta** e depois em **Permitir** para ver seus status."
 }

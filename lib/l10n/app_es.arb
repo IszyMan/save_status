@@ -364,6 +364,7 @@
         "allowAccessButton": "Permitir acceso 👈",
         "repost": "Republicar",
         "save": "Guardar",
-        "delete": "Eliminar"
+        "delete": "Eliminar",
+        "setupFolderInstructions": "**¡Solo un paso!** Elige tu aplicación abajo. Cuando se cierre la guía, toca **Usar esta carpeta** y luego **Permitir** para ver tus estados."
 
 }

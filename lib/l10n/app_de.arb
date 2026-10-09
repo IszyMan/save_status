@@ -363,5 +363,6 @@
         "allowAccessButton": "Zugriff erlauben 👈",
         "repost": "Erneut posten",
         "save": "Speichern",
-        "delete": "Löschen"
+        "delete": "Löschen",
+        "setupFolderInstructions": "**Nur noch ein Schritt!** Wähle unten deine App. Sobald die Anleitung geschlossen ist, tippe auf **Diesen Ordner verwenden** und dann auf **Zulassen**, um deine Statusmeldungen anzuzeigen."
 }

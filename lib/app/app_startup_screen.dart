@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../screens/language_selection_screen.dart';
 import '../screens/onboarding.dart';
 import '../screens/splash_screen.dart';
 import '../screens/status_home_page.dart';
@@ -22,7 +21,6 @@ class AppStartupScreen extends StatefulWidget {
 
 class _AppStartupScreenState extends State<AppStartupScreen> {
   bool _checking = true;
-  bool _languageSelected = false;
   bool _onboardingCompleted = false;
   bool _completing = false;
 
@@ -51,9 +49,6 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       }
 
       setState(() {
-        _languageSelected =
-            language != null && language.isNotEmpty;
-
         _onboardingCompleted = completed;
         _checking = false;
       });
@@ -68,24 +63,26 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     }
   }
 
-  void _completeLanguageSelection(Locale locale) {
+  void _changeWelcomeLanguage(Locale locale) {
     widget.onLanguageSelected(locale);
-
-    if (!mounted) return;
-
-    setState(() {
-      _languageSelected = true;
-    });
   }
 
   Future<void> _completeOnboarding() async {
     if (_completing) return;
 
-    _completing = true;
+    setState(() {
+      _completing = true;
+    });
+
+    final locale = Localizations.localeOf(context);
 
     try {
-      final preferences =
-      await SharedPreferences.getInstance();
+      final preferences = await SharedPreferences.getInstance();
+
+      await preferences.setString(
+        'selected_language',
+        locale.languageCode,
+      );
 
       await preferences.setBool(
         'onboarding_completed',
@@ -116,15 +113,11 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
       );
     }
 
-    if (!_languageSelected) {
-      return LanguageSelectionScreen(
-        onLanguageSelected: _completeLanguageSelection,
-      );
-    }
-
     if (!_onboardingCompleted) {
       return OnboardingScreen(
         onGetStarted: _completeOnboarding,
+        onLanguageSelected: _changeWelcomeLanguage,
+        busy: _completing,
       );
     }
 

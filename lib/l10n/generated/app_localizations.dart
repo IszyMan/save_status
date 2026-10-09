@@ -1705,6 +1705,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get delete;
+
+  /// No description provided for @setupFolderInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses.'**
+  String get setupFolderInstructions;
 }
 
 class _AppLocalizationsDelegate

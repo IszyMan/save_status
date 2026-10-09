@@ -970,4 +970,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get delete => 'Löschen';
+
+  @override
+  String get setupFolderInstructions =>
+      '**Nur noch ein Schritt!** Wähle unten deine App. Sobald die Anleitung geschlossen ist, tippe auf **Diesen Ordner verwenden** und dann auf **Zulassen**, um deine Statusmeldungen anzuzeigen.';
 }

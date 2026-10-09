@@ -971,4 +971,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get delete => 'Eliminar';
+
+  @override
+  String get setupFolderInstructions =>
+      '**¡Solo un paso!** Elige tu aplicación abajo. Cuando se cierre la guía, toca **Usar esta carpeta** y luego **Permitir** para ver tus estados.';
 }

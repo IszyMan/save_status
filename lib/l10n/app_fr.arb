@@ -363,5 +363,6 @@
 
         "repost": "Republier",
         "save": "Enregistrer",
-        "delete": "Supprimer"
+        "delete": "Supprimer",
+        "setupFolderInstructions": "**Une dernière étape !** Choisissez votre application ci-dessous. Lorsque le guide se ferme, appuyez sur **Utiliser ce dossier**, puis sur **Autoriser** pour afficher vos statuts."
 }

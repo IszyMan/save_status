@@ -973,4 +973,8 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get delete => 'Supprimer';
+
+  @override
+  String get setupFolderInstructions =>
+      '**Une dernière étape !** Choisissez votre application ci-dessous. Lorsque le guide se ferme, appuyez sur **Utiliser ce dossier**, puis sur **Autoriser** pour afficher vos statuts.';
 }

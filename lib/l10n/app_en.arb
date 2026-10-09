@@ -365,7 +365,8 @@
 
         "repost": "Repost",
         "save": "Save",
-        "delete": "Delete"
+        "delete": "Delete",
+        "setupFolderInstructions": "**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses."
 
 
 

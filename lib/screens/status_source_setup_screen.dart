@@ -162,7 +162,20 @@ class _StatusSourceSetupScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.setUpStatusAccess),
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.primaryDark,
+        title: Text(
+          l10n.setUpStatusAccess,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+          ),
+        ),
       ),
       body: _loading
           ? const Center(
@@ -207,71 +220,111 @@ class _StatusSourceSetupScreenState
     final installed = _installedSources;
 
     return SafeArea(
-      child: Center(
+      child: Align(
+        alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 500,
-            ),
+            constraints: const BoxConstraints(maxWidth: 500),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
-
                 Center(
                   child: Container(
-                    width: 72,
-                    height: 72,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(
-                        alpha: 0.12,
-                      ),
-                      shape: BoxShape.circle,
+                      color: AppColors.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
                       Icons.download_rounded,
-                      size: 36,
+                      size: 28,
                       color: AppColors.primaryDark,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 Text(
                   l10n.saveStatus,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: AppColors.primaryDark,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 Text(
                   l10n.savePhotosAndVideosFromWhatsAppStatuses,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
+                    fontSize: 15,
+                    height: 1.4,
                     color: AppColors.textSecondary,
                   ),
                 ),
 
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
 
                 if (installed.isEmpty)
                   _buildNoWhatsAppCard(),
 
-                for (final source in installed)
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 14,
+                if (installed.isNotEmpty) ...[
+                  // Instructions now appear ABOVE the source choices.
+                  _buildInstructionBox(),
+
+                  const SizedBox(height: 18),
+
+                  if (installed.length > 1)
+                    for (final source in installed)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildSetupCard(source),
+                      ),
+
+                  if (installed.length == 1) ...[
+                    Text(
+                      _sourceName(installed.single),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
                     ),
-                    child: _buildSetupCard(source),
-                  ),
+
+                    const SizedBox(height: 14),
+
+                    FilledButton(
+                      onPressed: _busy
+                          ? null
+                          : () => _setupSource(installed.single),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.continueButton,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
@@ -364,6 +417,62 @@ class _StatusSourceSetupScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+
+
+  Widget _buildInstructionBox() {
+    final l10n = AppLocalizations.of(context)!;
+    final parts = l10n.setupFolderInstructions.split('**');
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.folder_open_rounded,
+              size: 24,
+              color: AppColors.primaryDark,
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  for (var i = 0; i < parts.length; i++)
+                    TextSpan(
+                      text: parts[i],
+                      style: i.isOdd
+                          ? const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                      )
+                          : null,
+                    ),
+                ],
+              ),
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.45,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -971,4 +971,8 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get delete => 'Excluir';
+
+  @override
+  String get setupFolderInstructions =>
+      '**Só mais um passo!** Escolha seu aplicativo abaixo. Quando a orientação fechar, toque em **Usar esta pasta** e depois em **Permitir** para ver seus status.';
 }
