@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../screens/language_selection_screen.dart';
-import '../../screens/onboarding.dart';
-import '../../screens/splash_screen.dart';
+import '../screens/language_selection_screen.dart';
+import '../screens/onboarding.dart';
+import '../screens/splash_screen.dart';
 import '../screens/status_home_page.dart';
+import '../screens/status_source_setup_screen.dart';
 
 class AppStartupScreen extends StatefulWidget {
   final ValueChanged<Locale> onLanguageSelected;
@@ -19,94 +20,55 @@ class AppStartupScreen extends StatefulWidget {
       _AppStartupScreenState();
 }
 
-class _AppStartupScreenState
-    extends State<AppStartupScreen> {
+class _AppStartupScreenState extends State<AppStartupScreen> {
   bool _checking = true;
   bool _languageSelected = false;
   bool _onboardingCompleted = false;
+  bool _completing = false;
 
   @override
   void initState() {
     super.initState();
-
-    debugPrint(
-      'STATUS_STARTUP: AppStartupScreen initState '
-          'instance=$hashCode',
-    );
-
     _checkStartupState();
   }
-
-  // ==========================================================================
-  // CHECK STARTUP STATE
-  // ==========================================================================
 
   Future<void> _checkStartupState() async {
     try {
       final preferences =
       await SharedPreferences.getInstance();
 
-      final selectedLanguage =
-      preferences.getString(
-        'selected_language',
-      );
+      final language =
+      preferences.getString('selected_language');
 
       final completed =
-          preferences.getBool(
-            'onboarding_completed',
-          ) ??
+          preferences.getBool('onboarding_completed') ??
               false;
-
-      debugPrint(
-        'STATUS_STARTUP: '
-            'selectedLanguage=$selectedLanguage | '
-            'onboardingCompleted=$completed',
-      );
 
       if (!mounted) return;
 
-      if (selectedLanguage != null &&
-          selectedLanguage.isNotEmpty) {
-        widget.onLanguageSelected(
-          Locale(selectedLanguage),
-        );
+      if (language != null && language.isNotEmpty) {
+        widget.onLanguageSelected(Locale(language));
       }
 
       setState(() {
         _languageSelected =
-            selectedLanguage != null &&
-                selectedLanguage.isNotEmpty;
+            language != null && language.isNotEmpty;
 
         _onboardingCompleted = completed;
         _checking = false;
       });
-      debugPrint(
-        'STATUS_STARTUP: decision | '
-            'languageSelected=$_languageSelected | '
-            'onboardingCompleted=$_onboardingCompleted',
-      );
     } catch (e) {
-      debugPrint(
-        'Unable to check startup state: $e',
-      );
+      debugPrint('Unable to check startup state: $e');
 
       if (!mounted) return;
 
       setState(() {
-        _languageSelected = false;
-        _onboardingCompleted = false;
         _checking = false;
       });
     }
   }
 
-  // ==========================================================================
-  // LANGUAGE SELECTION
-  // ==========================================================================
-
-  void _completeLanguageSelection(
-      Locale locale,
-      ) {
+  void _completeLanguageSelection(Locale locale) {
     widget.onLanguageSelected(locale);
 
     if (!mounted) return;
@@ -116,11 +78,11 @@ class _AppStartupScreenState
     });
   }
 
-  // ==========================================================================
-  // ONBOARDING
-  // ==========================================================================
-
   Future<void> _completeOnboarding() async {
+    if (_completing) return;
+
+    _completing = true;
+
     try {
       final preferences =
       await SharedPreferences.getInstance();
@@ -130,62 +92,35 @@ class _AppStartupScreenState
         true,
       );
     } catch (e) {
-      debugPrint(
-        'Unable to save onboarding status: $e',
-      );
+      debugPrint('Unable to save onboarding status: $e');
     }
 
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => StatusHomePage(
-          onLanguageChanged:
-          widget.onLanguageSelected,
+      MaterialPageRoute<void>(
+        builder: (_) => _StartupAccessGate(
+          onLanguageChanged: widget.onLanguageSelected,
         ),
       ),
     );
   }
 
-  // ==========================================================================
-  // BUILD
-  // ==========================================================================
-
   @override
   Widget build(BuildContext context) {
     if (_checking) {
       return const Scaffold(
-        backgroundColor: Color(0xFF075E54),
         body: Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor:
-              AlwaysStoppedAnimation<Color>(
-                Color(0xFF25D366),
-              ),
-            ),
-          ),
+          child: CircularProgressIndicator(),
         ),
       );
     }
 
-    // ------------------------------------------------------------------------
-    // FIRST LAUNCH: LANGUAGE SELECTION
-    // ------------------------------------------------------------------------
-
     if (!_languageSelected) {
       return LanguageSelectionScreen(
-        onLanguageSelected:
-        _completeLanguageSelection,
+        onLanguageSelected: _completeLanguageSelection,
       );
     }
-
-    // ------------------------------------------------------------------------
-    // ONBOARDING
-    // ------------------------------------------------------------------------
 
     if (!_onboardingCompleted) {
       return OnboardingScreen(
@@ -193,15 +128,36 @@ class _AppStartupScreenState
       );
     }
 
-    // ------------------------------------------------------------------------
-    // EXISTING USER
-    // ------------------------------------------------------------------------
-
     return SplashScreen(
-      nextScreen: StatusHomePage(
-        onLanguageChanged:
-        widget.onLanguageSelected,
+      nextScreen: _StartupAccessGate(
+        onLanguageChanged: widget.onLanguageSelected,
       ),
+    );
+  }
+}
+
+// Checks existing native folder access before entering home.
+class _StartupAccessGate extends StatelessWidget {
+  final ValueChanged<Locale> onLanguageChanged;
+
+  const _StartupAccessGate({
+    required this.onLanguageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StatusSourceSetupScreen(
+      onComplete: () {
+        if (!context.mounted) return;
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => StatusHomePage(
+              onLanguageChanged: onLanguageChanged,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -30,6 +30,7 @@ class MediaFilterBar extends StatelessWidget {
       child: Row(
         children: [
           _MediaFilterChip(
+            icon: Icons.photo_rounded,
             label: l10n.images,
             count: imagesCount,
             value: 'images',
@@ -42,6 +43,7 @@ class MediaFilterBar extends StatelessWidget {
           ),
 
           _MediaFilterChip(
+            icon: Icons.videocam_rounded,
             label: l10n.videos,
             count: videosCount,
             value: 'videos',
@@ -55,6 +57,7 @@ class MediaFilterBar extends StatelessWidget {
 }
 
 class _MediaFilterChip extends StatelessWidget {
+  final IconData icon;
   final String label;
   final int count;
   final String value;
@@ -62,6 +65,7 @@ class _MediaFilterChip extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   const _MediaFilterChip({
+    required this.icon,
     required this.label,
     required this.count,
     required this.value,
@@ -71,10 +75,24 @@ class _MediaFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color contentColor = selected
+        ? Colors.white
+        : AppColors.primaryDark;
+
     return ChoiceChip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(
+            icon,
+            size: 20,
+            color: contentColor,
+          ),
+
+          const SizedBox(
+            width: 6,
+          ),
+
           Text(label),
 
           const SizedBox(

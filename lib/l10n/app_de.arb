@@ -360,5 +360,8 @@
           }
         },
         "allowAccessToStatusesFolder": "Zugriff auf den\n\".Statuses\"-Ordner erlauben",
-        "allowAccessButton": "Zugriff erlauben 👈"
+        "allowAccessButton": "Zugriff erlauben 👈",
+        "repost": "Erneut posten",
+        "save": "Speichern",
+        "delete": "Löschen"
 }

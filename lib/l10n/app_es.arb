@@ -361,5 +361,9 @@
           }
         },
         "allowAccessToStatusesFolder": "Permitir el acceso a la\ncarpeta \".Statuses\"",
-        "allowAccessButton": "Permitir acceso 👈"
+        "allowAccessButton": "Permitir acceso 👈",
+        "repost": "Republicar",
+        "save": "Guardar",
+        "delete": "Eliminar"
+
 }

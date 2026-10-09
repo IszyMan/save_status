@@ -1673,13 +1673,13 @@ abstract class AppLocalizations {
   /// No description provided for @saveSourceStatusTitle.
   ///
   /// In en, this message translates to:
-  /// **'Save {sourceName}\nStatus Videos & Photos'**
+  /// **'To Save {sourceName}\nStatus Videos & Photos'**
   String saveSourceStatusTitle(Object sourceName);
 
   /// No description provided for @allowAccessToStatusesFolder.
   ///
   /// In en, this message translates to:
-  /// **'Allow access to the\n\".Statuses\" folder'**
+  /// **'You need to Allow access to the\n\".Statuses\" folder'**
   String get allowAccessToStatusesFolder;
 
   /// No description provided for @allowAccessButton.
@@ -1687,6 +1687,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allow Access 👈'**
   String get allowAccessButton;
+
+  /// No description provided for @repost.
+  ///
+  /// In en, this message translates to:
+  /// **'Repost'**
+  String get repost;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
 }
 
 class _AppLocalizationsDelegate

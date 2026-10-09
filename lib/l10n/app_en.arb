@@ -354,14 +354,18 @@
         "share": "Share",
 
 
-        "saveSourceStatusTitle": "Save {sourceName}\nStatus Videos & Photos",
+        "saveSourceStatusTitle": "To Save {sourceName}\nStatus Videos & Photos",
         "@saveSourceStatusTitle": {
           "placeholders": {
             "sourceName": {}
           }
         },
-        "allowAccessToStatusesFolder": "Allow access to the\n\".Statuses\" folder",
-        "allowAccessButton": "Allow Access 👈"
+        "allowAccessToStatusesFolder": "You need to Allow access to the\n\".Statuses\" folder",
+        "allowAccessButton": "Allow Access 👈",
+
+        "repost": "Repost",
+        "save": "Save",
+        "delete": "Delete"
 
 
 

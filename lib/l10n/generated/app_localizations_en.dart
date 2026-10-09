@@ -944,13 +944,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String saveSourceStatusTitle(Object sourceName) {
-    return 'Save $sourceName\nStatus Videos & Photos';
+    return 'To Save $sourceName\nStatus Videos & Photos';
   }
 
   @override
   String get allowAccessToStatusesFolder =>
-      'Allow access to the\n\".Statuses\" folder';
+      'You need to Allow access to the\n\".Statuses\" folder';
 
   @override
   String get allowAccessButton => 'Allow Access 👈';
+
+  @override
+  String get repost => 'Repost';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
 }

@@ -46,7 +46,7 @@ object StatusAccessTranslations {
                 "Appuyez sur \"UTILISER CE DOSSIER\" pour enregistrer les statuts"
 
             else ->
-                "Press \"USE THIS FOLDER\" to save statuses"
+                "Dear user, Please Press \"USE THIS FOLDER\" to save statuses"
         }
     }
 

@@ -10,6 +10,7 @@ class StatusView extends StatefulWidget {
   final String filePath;
   final Map<String, dynamic> status;
   final bool isVideo;
+  final bool isSavedItem;
   final VoidCallback? onSaved;
 
   const StatusView({
@@ -17,6 +18,7 @@ class StatusView extends StatefulWidget {
     required this.filePath,
     required this.status,
     required this.isVideo,
+    this.isSavedItem = false,
     this.onSaved,
   });
 
@@ -34,6 +36,11 @@ class _StatusViewState extends State<StatusView> {
   bool _initializing = true;
   bool _saving = false;
   bool _sharing = false;
+  bool _reposting = false;
+
+  bool _deleting = false;
+
+
 
   String? _error;
 
@@ -132,6 +139,46 @@ class _StatusViewState extends State<StatusView> {
     }
   }
 
+
+  Future<void> _repostStatus() async {
+    if (_reposting || _sharing || _saving) return;
+
+    setState(() {
+      _reposting = true;
+    });
+
+    try {
+      await _videoController?.pause();
+
+      await _channel.invokeMethod(
+        'repostStatus',
+        {
+          'uri': widget.status['uri'],
+          'mimeType': widget.status['mimeType'],
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      final message = e is PlatformException
+          ? e.message ?? 'Unable to repost this status.'
+          : 'Unable to repost this status. Please try again.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reposting = false;
+        });
+      }
+    }
+  }
+
   // ==========================================================================
   // SHARE
   // ==========================================================================
@@ -187,6 +234,90 @@ class _StatusViewState extends State<StatusView> {
       if (mounted) {
         setState(() {
           _sharing = false;
+        });
+      }
+    }
+  }
+
+
+  Future<void> _deleteStatus() async {
+    if (!widget.isSavedItem ||
+        _deleting ||
+        _saving ||
+        _sharing ||
+        _reposting) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete saved item?'),
+          content: Text(
+            'This will permanently remove this '
+                '${widget.isVideo ? 'video' : 'photo'} '
+                'from Saved and your phone’s gallery.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _deleting = true;
+    });
+
+    try {
+      await _videoController?.pause();
+
+      final deleted = await _channel.invokeMethod<bool>(
+        'deleteSavedStatus',
+        {
+          'uri': widget.status['uri'],
+        },
+      );
+
+      if (!mounted) return;
+
+      if (deleted == true) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      final message = e is PlatformException
+          ? e.message ?? 'Unable to delete this item.'
+          : 'Unable to delete this item. Please try again.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deleting = false;
         });
       }
     }
@@ -311,79 +442,112 @@ class _StatusViewState extends State<StatusView> {
       ColorScheme colorScheme,
       AppLocalizations l10n,
       ) {
+    final busy =
+        _reposting || _sharing || _saving || _deleting;
+
     return Container(
       width: double.infinity,
+      color: Colors.black,
       padding: const EdgeInsets.fromLTRB(
-        16,
         12,
         16,
         12,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
-        ),
+        36,
       ),
       child: Row(
         children: [
           Expanded(
-            child: SizedBox(
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _saveStatus,
-                icon: _saving
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-                    : const Icon(
-                  Icons.download_rounded,
-                ),
-                label: Text(
-                  _saving
-                      ? l10n.saving
-                      : l10n.download,
-                ),
-              ),
+            child: _buildViewerAction(
+              label: l10n.repost,
+              icon: Icons.reply_all_rounded,
+              loading: _reposting,
+              onPressed: busy ? null : _repostStatus,
             ),
           ),
-          const SizedBox(
-            width: 12,
-          ),
+
           Expanded(
-            child: SizedBox(
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: _sharing ? null : _shareStatus,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
-                ),
-                icon: _sharing
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-                    : const Icon(
-                  Icons.share_rounded,
-                ),
-                label: Text(
-                  _sharing
-                      ? l10n.sharing
-                      : l10n.share,
+            child: _buildViewerAction(
+              label: l10n.share,
+              icon: Icons.share_outlined,
+              loading: _sharing,
+              onPressed: busy ? null : _shareStatus,
+            ),
+          ),
+
+          Expanded(
+            child: _buildViewerAction(
+              label: widget.isSavedItem ? l10n.delete : l10n.save,
+              icon: widget.isSavedItem
+                  ? Icons.delete_outline_rounded
+                  : Icons.file_download_outlined,
+              loading: widget.isSavedItem ? _deleting : _saving,
+              onPressed: busy
+                  ? null
+                  : widget.isSavedItem
+                  ? _deleteStatus
+                  : _saveStatus,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViewerAction({
+    required String label,
+    required IconData icon,
+    required bool loading,
+    required VoidCallback? onPressed,
+  }) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white38,
+        backgroundColor: Colors.transparent,
+        minimumSize: const Size(0, 72),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 6,
+          vertical: 10,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: loading
+                ? const Padding(
+              padding: EdgeInsets.all(2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : Icon(
+              icon,
+              size: 28,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -392,6 +556,7 @@ class _StatusViewState extends State<StatusView> {
       ),
     );
   }
+
 
   // ==========================================================================
   // MEDIA CONTENT

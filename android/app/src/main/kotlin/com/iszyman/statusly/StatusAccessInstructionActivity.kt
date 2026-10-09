@@ -10,12 +10,20 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.os.Handler
+import android.os.Looper
 
 class StatusAccessInstructionActivity : Activity() {
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    private val dismissHandler = Handler(Looper.getMainLooper())
+
+    private val dismissInstruction = Runnable {
+        if (!isFinishing && !isDestroyed) {
+            finish()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         window.setBackgroundDrawableResource(
@@ -23,6 +31,18 @@ class StatusAccessInstructionActivity : Activity() {
         )
 
         buildInstructionView()
+
+        // Dismiss the guide after four seconds.
+        // Android's actual folder picker remains open underneath.
+        dismissHandler.postDelayed(
+            dismissInstruction,
+            4000L
+        )
+    }
+
+    override fun onDestroy() {
+        dismissHandler.removeCallbacks(dismissInstruction)
+        super.onDestroy()
     }
 
     private fun buildInstructionView() {

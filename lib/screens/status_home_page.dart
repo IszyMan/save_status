@@ -10,6 +10,7 @@ import '../widgets/status_icon.dart';
 import '../widgets/status_thumbnail.dart';
 import '../screens/settings.dart';
 import '../widgets/status_access_setup.dart';
+import 'status_source_setup_screen.dart';
 
 // ============================================================================
 // STATUS HOME PAGE
@@ -30,6 +31,7 @@ class StatusHomePage extends StatefulWidget {
 class _StatusHomePageState extends State<StatusHomePage> {
   final StatusService _statusService = StatusService();
 
+
   // ==========================================================================
   // APP STATE
   // ==========================================================================
@@ -43,11 +45,24 @@ class _StatusHomePageState extends State<StatusHomePage> {
   String? _lastSelectedSource;
   String? _selectedSource;
 
+
+  bool _loadingAppState = true;
+
   // 0 = Statuses
   // 1 = Saved
   // 2 = Settings
   int _currentTab = 0;
   final PageController _pageController = PageController();
+
+
+
+  // Five swipe pages:
+  // 0: Status photos
+  // 1: Status videos
+  // 2: Saved photos
+  // 3: Saved videos
+  // 4: Settings
+  int _currentPage = 0;
 
   // Only two filters.
   // Images is the default.
@@ -101,11 +116,17 @@ class _StatusHomePageState extends State<StatusHomePage> {
       if (!mounted) return;
 
       setState(() {
-        _whatsappInstalled = data['whatsappInstalled'] == true;
-        _businessInstalled = data['businessInstalled'] == true;
+        _whatsappInstalled =
+            data['whatsappInstalled'] == true;
 
-        _whatsappConfigured = data['whatsappConfigured'] == true;
-        _businessConfigured = data['businessConfigured'] == true;
+        _businessInstalled =
+            data['businessInstalled'] == true;
+
+        _whatsappConfigured =
+            data['whatsappConfigured'] == true;
+
+        _businessConfigured =
+            data['businessConfigured'] == true;
 
         _lastSelectedSource =
             data['lastSelectedSource']?.toString();
@@ -113,9 +134,13 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
       await _selectInitialSource();
     } catch (e) {
-      debugPrint(
-        'Unable to load app state: $e',
-      );
+      debugPrint('Unable to load app state: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingAppState = false;
+        });
+      }
     }
   }
 
@@ -442,7 +467,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
     setState(() {
       _selectedSource = source;
-      _statusFilter = 'images';
     });
 
     try {
@@ -471,26 +495,62 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // BOTTOM NAVIGATION
   // ==========================================================================
 
-  Future<void> _changeTab(int index) async {
-    if (index == _currentTab) {
-      return;
-    }
+  Future<void> _goToPage(int page) async {
+    if (!mounted || !_pageController.hasClients) return;
+    if (page < 0 || page > 4) return;
 
-    await _pageController.animateToPage(
-      index,
-      duration: const Duration(
-        milliseconds: 420,
-      ),
-      curve: Curves.easeInOutCubic,
-    );
+    final actualPage =
+        _pageController.page ?? _currentPage.toDouble();
 
-    if (!mounted) {
-      return;
+    if ((actualPage - page).abs() < 0.01) return;
+
+    if ((actualPage - page).abs() > 1.01) {
+      _pageController.jumpToPage(page);
+    } else {
+      await _pageController.animateToPage(
+        page,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
     }
+  }
+
+  void _onSwipePageChanged(int page) {
+    if (!mounted) return;
 
     setState(() {
-      _currentTab = index;
+      _currentPage = page;
+
+      if (page <= 1) {
+        _currentTab = 0;
+        _statusFilter = page == 0 ? 'images' : 'videos';
+      } else if (page <= 3) {
+        _currentTab = 1;
+        _savedFilter = page == 2 ? 'images' : 'videos';
+      } else {
+        _currentTab = 2;
+      }
     });
+  }
+
+  Future<void> _changeTab(int index) async {
+    switch (index) {
+      case 0:
+        await _goToPage(
+          _statusFilter == 'videos' ? 1 : 0,
+        );
+        break;
+
+      case 1:
+        await _goToPage(
+          _savedFilter == 'videos' ? 3 : 2,
+        );
+        break;
+
+      case 2:
+        await _goToPage(4);
+        break;
+    }
   }
 
   // ==========================================================================
@@ -521,19 +581,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     ).toList();
   }
 
-  List<Map<String, dynamic>> get _filteredStatuses {
-    return _filterMedia(
-      _statuses,
-      _statusFilter,
-    );
-  }
 
-  List<Map<String, dynamic>> get _filteredSavedStatuses {
-    return _filterMedia(
-      _savedStatuses,
-      _savedFilter,
-    );
-  }
 
   // ==========================================================================
   // VIDEO CHECK
@@ -628,8 +676,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _openStatus(
-      Map<String, dynamic> status,
-      ) async {
+      Map<String, dynamic> status,{
+        bool isSavedItem = false,
+    }) async {
     final l10n = AppLocalizations.of(context)!;
 
     try {
@@ -677,6 +726,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             filePath: path,
             status: status,
             isVideo: _isVideo(status),
+            isSavedItem: isSavedItem,
             onSaved: () {
               _markStatusDownloaded(status);
             },
@@ -729,235 +779,31 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
   Widget _buildSetupContent() {
     final l10n = AppLocalizations.of(context)!;
-    final installed = _installedSources;
 
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 500,
+    return Center(
+      child: FilledButton.icon(
+        icon: const Icon(Icons.folder_open),
+        label: Text(l10n.setUpStatusAccess),
+        onPressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (setupContext) =>
+                  StatusSourceSetupScreen(
+                    onComplete: () {
+                      Navigator.of(setupContext).pop();
+                    },
+                  ),
             ),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(
-                  height: 20,
-                ),
+          );
 
-                Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary
-                          .withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.download_rounded,
-                      size: 36,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ),
+          if (!mounted) return;
 
-                const SizedBox(
-                  height: 24,
-                ),
-
-                Text(
-                  l10n.saveStatus,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 12,
-                ),
-
-                Text(
-                  l10n.savePhotosAndVideosFromWhatsAppStatuses,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 36,
-                ),
-
-                if (installed.isEmpty)
-                  _buildNoWhatsAppCard(),
-
-                for (final source in installed)
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 14,
-                    ),
-                    child: _buildSetupCard(
-                      source,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // SETUP CARD
-  // ==========================================================================
-
-  Widget _buildSetupCard(String source) {
-    final l10n = AppLocalizations.of(context)!;
-    final configured = _isConfigured(source);
-
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(
-          color: AppColors.divider,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          if (configured) {
-            _selectSource(source);
-          } else {
-            _setupSource(source);
-          }
+          await _loadAppState();
         },
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.primary
-                      .withValues(alpha: 0.10),
-                  borderRadius:
-                  BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.chat_rounded,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-
-              const SizedBox(
-                width: 14,
-              ),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _sourceName(source),
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight:
-                        FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 5,
-                    ),
-
-                    Text(
-                      configured
-                          ? l10n.statusAccessIsReady
-                          : l10n.setUpStatusAccess,
-                      style: TextStyle(
-                        color: configured
-                            ? AppColors.primaryDark
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Icon(
-                configured
-                    ? Icons.check_circle
-                    : Icons.chevron_right,
-                color: configured
-                    ? AppColors.primaryDark
-                    : AppColors.textSecondary,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // ==========================================================================
-  // NO WHATSAPP
-  // ==========================================================================
-
-  Widget _buildNoWhatsAppCard() {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.chat_bubble_outline,
-              size: 48,
-              color: AppColors.textSecondary,
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            Text(
-              l10n.whatsappNotFound,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(
-              height: 8,
-            ),
-
-            Text(
-              l10n.installWhatsAppOrBusinessToUseStatusly,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ==========================================================================
   // SOURCE SELECTOR
@@ -1121,6 +967,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     required String emptyMessage,
     bool showStatusInstructions = false,
     bool showDownloadButton = true,
+    bool isSavedItem = false,
   }) {
     if (items.isEmpty) {
       if (loading) {
@@ -1169,6 +1016,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             child: _buildMediaTile(
               status,
               showDownloadButton: showDownloadButton,
+              isSavedItem: isSavedItem,
             ),
           );
         },
@@ -1183,6 +1031,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
   Widget _buildMediaTile(
       Map<String, dynamic> status, {
         bool showDownloadButton = true,
+        bool isSavedItem = false,
       }) {
     final uri =
         status['uri']?.toString() ?? '';
@@ -1191,7 +1040,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
     return GestureDetector(
       onTap: () {
-        _openStatus(status);
+        _openStatus(
+          status,
+          isSavedItem: isSavedItem,
+        );
       },
       child: ClipRRect(
         borderRadius:
@@ -1248,7 +1100,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      _openStatus(status);
+                      _openStatus(
+                        status,
+                        isSavedItem: isSavedItem,
+                      );
                     },
                     child: SizedBox(
                       width: 35,
@@ -1510,72 +1365,34 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // STATUSES TAB
   // ==========================================================================
 
-  Widget _buildStatusesTab() {
+  Widget _buildStatusesTab(String filter) {
     final l10n = AppLocalizations.of(context)!;
+
+    if (_loadingAppState) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
     final source = _selectedSource;
 
-    if (source == null ||
-        !_isConfigured(source)) {
+    if (source == null || !_isConfigured(source)) {
       return _buildSetupContent();
     }
 
-    final showingVideos =
-        _statusFilter == 'videos';
+    final showingVideos = filter == 'videos';
 
-    final newStatuses =
-    _statuses.where(_isStatusNew).toList();
-
-    final imagesCount =
-        _filterMedia(
-          newStatuses,
-          'images',
-        ).length;
-
-    final videosCount =
-        _filterMedia(
-          newStatuses,
-          'videos',
-        ).length;
-
-    return Column(
-      children: [
-        const SizedBox(
-          height: 8,
-        ),
-
-        MediaFilterBar(
-          selectedFilter: _statusFilter,
-          onChanged: (value) {
-            setState(() {
-              _statusFilter = value;
-            });
-          },
-          imagesCount: imagesCount,
-          videosCount: videosCount,
-        ),
-
-        const SizedBox(
-          height: 4,
-        ),
-
-        Expanded(
-          child: _buildMediaGrid(
-            items: _filteredStatuses,
-            loading: _loadingStatuses,
-            onRefresh: () {
-              return _loadStatuses(source);
-            },
-            emptyTitle: showingVideos
-                ? l10n.noVideosFound
-                : l10n.noImagesFound,
-            emptyMessage: showingVideos
-                ? l10n.videoStatusesWillAppearHere
-                : l10n.imageStatusesWillAppearHere,
-            showStatusInstructions: true,
-          ),
-        ),
-      ],
+    return _buildMediaGrid(
+      items: _filterMedia(_statuses, filter),
+      loading: _loadingStatuses,
+      onRefresh: () => _loadStatuses(source),
+      emptyTitle: showingVideos
+          ? l10n.noVideosFound
+          : l10n.noImagesFound,
+      emptyMessage: showingVideos
+          ? l10n.videoStatusesWillAppearHere
+          : l10n.imageStatusesWillAppearHere,
+      showStatusInstructions: true,
     );
   }
 
@@ -1583,60 +1400,22 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // SAVED TAB
   // ==========================================================================
 
-  Widget _buildSavedTab() {
+  Widget _buildSavedTab(String filter) {
     final l10n = AppLocalizations.of(context)!;
+    final showingVideos = filter == 'videos';
 
-    final showingVideos =
-        _savedFilter == 'videos';
-
-    final imagesCount =
-        _filterMedia(
-          _savedStatuses,
-          'images',
-        ).length;
-
-    final videosCount =
-        _filterMedia(
-          _savedStatuses,
-          'videos',
-        ).length;
-
-    return Column(
-      children: [
-        const SizedBox(
-          height: 8,
-        ),
-
-        MediaFilterBar(
-          selectedFilter: _savedFilter,
-          onChanged: (value) {
-            setState(() {
-              _savedFilter = value;
-            });
-          },
-          imagesCount: imagesCount,
-          videosCount: videosCount,
-        ),
-
-        const SizedBox(
-          height: 4,
-        ),
-
-        Expanded(
-          child: _buildMediaGrid(
-            items: _filteredSavedStatuses,
-            loading: _loadingSaved,
-            onRefresh: _loadSavedStatuses,
-            emptyTitle: showingVideos
-                ? l10n.noSavedVideos
-                : l10n.noSavedImages,
-            emptyMessage: showingVideos
-                ? l10n.videosYouSaveWillAppearHere
-                : l10n.imagesYouSaveWillAppearHere,
-            showDownloadButton: false,
-          ),
-        ),
-      ],
+    return _buildMediaGrid(
+      items: _filterMedia(_savedStatuses, filter),
+      loading: _loadingSaved,
+      onRefresh: _loadSavedStatuses,
+      emptyTitle: showingVideos
+          ? l10n.noSavedVideos
+          : l10n.noSavedImages,
+      emptyMessage: showingVideos
+          ? l10n.videosYouSaveWillAppearHere
+          : l10n.imagesYouSaveWillAppearHere,
+      showDownloadButton: false,
+      isSavedItem: true,
     );
   }
 
@@ -1754,38 +1533,82 @@ class _StatusHomePageState extends State<StatusHomePage> {
         // BODY
         // ======================================================================
 
-        body: PageView(
-          controller: _pageController,
-          physics:
-          const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            if (_currentTab != index) {
-              setState(() {
-                _currentTab = index;
-              });
-            }
-          },
+        body: Column(
           children: [
-            _buildStatusesTab(),
+            // Fixed Photos / Videos tabs.
+            // Hidden on Settings and while Statuses needs setup.
+            if (
+            _currentTab == 1 ||
+                (
+                    _currentTab == 0 &&
+                        !_loadingAppState &&
+                        _selectedSource != null &&
+                        _isConfigured(_selectedSource!)
+                )
+            ) ...[
+              const SizedBox(height: 8),
 
-            _buildSavedTab(),
+              MediaFilterBar(
+                selectedFilter: _currentTab == 0
+                    ? _statusFilter
+                    : _savedFilter,
+                onChanged: (value) {
+                  final showingVideos = value == 'videos';
 
-            SettingsScreen(
-              statusService: _statusService,
-              whatsappInstalled:
-              _whatsappInstalled,
-              businessInstalled:
-              _businessInstalled,
-              whatsappConfigured:
-              _whatsappConfigured,
-              businessConfigured:
-              _businessConfigured,
-              onSelectSource:
-              _handleSettingsSource,
-              onOpenWhatsApp:
-              _openWhatsApp,
-              onLanguageChanged:
-              widget.onLanguageChanged,
+                  if (_currentTab == 0) {
+                    _goToPage(showingVideos ? 1 : 0);
+                  } else {
+                    _goToPage(showingVideos ? 3 : 2);
+                  }
+                },
+                imagesCount: _currentTab == 0
+                    ? _filterMedia(
+                  _statuses.where(_isStatusNew).toList(),
+                  'images',
+                ).length
+                    : _filterMedia(
+                  _savedStatuses,
+                  'images',
+                ).length,
+                videosCount: _currentTab == 0
+                    ? _filterMedia(
+                  _statuses.where(_isStatusNew).toList(),
+                  'videos',
+                ).length
+                    : _filterMedia(
+                  _savedStatuses,
+                  'videos',
+                ).length,
+              ),
+
+              const SizedBox(height: 4),
+            ],
+
+            // Only the content below the tabs moves horizontally.
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const PageScrollPhysics(),
+                onPageChanged: _onSwipePageChanged,
+                children: [
+                  _buildStatusesTab('images'),
+                  _buildStatusesTab('videos'),
+
+                  _buildSavedTab('images'),
+                  _buildSavedTab('videos'),
+
+                  SettingsScreen(
+                    statusService: _statusService,
+                    whatsappInstalled: _whatsappInstalled,
+                    businessInstalled: _businessInstalled,
+                    whatsappConfigured: _whatsappConfigured,
+                    businessConfigured: _businessConfigured,
+                    onSelectSource: _handleSettingsSource,
+                    onOpenWhatsApp: _openWhatsApp,
+                    onLanguageChanged: widget.onLanguageChanged,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

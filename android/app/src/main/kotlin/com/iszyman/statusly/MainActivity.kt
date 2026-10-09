@@ -48,6 +48,13 @@ class MainActivity : FlutterActivity() {
     private var folderPickerResult: MethodChannel.Result? = null
 
 
+    private val DELETE_SAVED_REQUEST = 9041
+
+    private var pendingDeleteResult: MethodChannel.Result? = null
+    private var pendingDeleteUri: Uri? = null
+    private var retryDeleteAfterConsent = false
+
+
     // =============================================================
     // FLUTTER METHOD CHANNEL
     // =============================================================
@@ -744,6 +751,224 @@ class MainActivity : FlutterActivity() {
                                 )
                             }
                         }
+                    }
+                }
+
+
+                "repostStatus" -> {
+                    val uriString = call.argument<String>("uri")
+
+                    if (uriString.isNullOrBlank()) {
+                        result.error(
+                            "INVALID_REPOST_URI",
+                            "Nothing available to repost",
+                            null
+                        )
+                        return@setMethodCallHandler
+                    }
+
+                    try {
+                        val mediaUri = Uri.parse(uriString)
+
+                        if (mediaUri.scheme != "content") {
+                            result.error(
+                                "INVALID_REPOST_URI",
+                                "A readable content URI is required",
+                                null
+                            )
+                            return@setMethodCallHandler
+                        }
+
+                        val suppliedMime =
+                            call.argument<String>("mimeType")
+
+                        val mimeType =
+                            contentResolver.getType(mediaUri)
+                                ?: suppliedMime
+                                    ?.takeIf {
+                                        it.startsWith("image/") ||
+                                                it.startsWith("video/")
+                                    }
+                                ?: "*/*"
+
+                        val preferences = getSharedPreferences(
+                            "status_saver",
+                            MODE_PRIVATE
+                        )
+
+                        val lastSource = preferences.getString(
+                            "last_selected_source",
+                            "whatsapp"
+                        )
+
+                        val preferredPackage =
+                            if (lastSource == "business") {
+                                "com.whatsapp.w4b"
+                            } else {
+                                "com.whatsapp"
+                            }
+
+                        val fallbackPackage =
+                            if (preferredPackage == "com.whatsapp") {
+                                "com.whatsapp.w4b"
+                            } else {
+                                "com.whatsapp"
+                            }
+
+                        val targetPackage = when {
+                            isPackageInstalled(preferredPackage) ->
+                                preferredPackage
+
+                            isPackageInstalled(fallbackPackage) ->
+                                fallbackPackage
+
+                            else -> null
+                        }
+
+                        if (targetPackage == null) {
+                            result.error(
+                                "WHATSAPP_NOT_INSTALLED",
+                                "Install WhatsApp or WhatsApp Business to repost.",
+                                null
+                            )
+                            return@setMethodCallHandler
+                        }
+
+                        val repostIntent = Intent(
+                            Intent.ACTION_SEND
+                        ).apply {
+                            type = mimeType
+
+                            setPackage(targetPackage)
+
+                            putExtra(
+                                Intent.EXTRA_STREAM,
+                                mediaUri
+                            )
+
+                            clipData = android.content.ClipData.newUri(
+                                contentResolver,
+                                "Status",
+                                mediaUri
+                            )
+
+                            addFlags(
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        }
+
+                        startActivity(repostIntent)
+
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e(
+                            "STATUS_DEBUG",
+                            "Repost error",
+                            e
+                        )
+
+                        result.error(
+                            "REPOST_ERROR",
+                            "Unable to open WhatsApp for this media.",
+                            null
+                        )
+                    }
+                }
+
+                // DELETE SAVED STATUS
+                "deleteSavedStatus" -> {
+                    val uriString = call.argument<String>("uri")
+
+                    if (pendingDeleteResult != null) {
+                        result.error(
+                            "DELETE_BUSY",
+                            "Another deletion is already in progress.",
+                            null
+                        )
+                        return@setMethodCallHandler
+                    }
+
+                    if (uriString.isNullOrBlank()) {
+                        result.error(
+                            "INVALID_DELETE_URI",
+                            "The saved item is missing.",
+                            null
+                        )
+                        return@setMethodCallHandler
+                    }
+
+                    try {
+                        val uri = Uri.parse(uriString)
+
+                        // Only allow deletion of items currently listed in Saved.
+                        // This excludes WhatsApp's original status folder.
+                        val isSavedMedia =
+                            uri.scheme == "content" &&
+                                    uri.authority == "media" &&
+                                    getSavedStatusesFromGallery().any {
+                                        it["uri"] == uriString
+                                    }
+
+                        if (!isSavedMedia) {
+                            result.error(
+                                "INVALID_SAVED_ITEM",
+                                "This item is no longer available in Saved.",
+                                null
+                            )
+                            return@setMethodCallHandler
+                        }
+
+                        try {
+                            val removed = contentResolver.delete(
+                                uri,
+                                null,
+                                null
+                            )
+
+                            result.success(removed > 0)
+                        } catch (e: SecurityException) {
+                            val request = when {
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                                    retryDeleteAfterConsent = false
+
+                                    MediaStore.createDeleteRequest(
+                                        contentResolver,
+                                        listOf(uri)
+                                    )
+                                }
+
+                                Build.VERSION.SDK_INT == Build.VERSION_CODES.Q &&
+                                        e is android.app.RecoverableSecurityException -> {
+                                    retryDeleteAfterConsent = true
+
+                                    e.userAction.actionIntent
+                                }
+
+                                else -> throw e
+                            }
+
+                            pendingDeleteResult = result
+                            pendingDeleteUri = uri
+
+                            startIntentSenderForResult(
+                                request.intentSender,
+                                DELETE_SAVED_REQUEST,
+                                null,
+                                0,
+                                0,
+                                0
+                            )
+                        }
+                    } catch (e: Exception) {
+                        pendingDeleteResult = null
+                        pendingDeleteUri = null
+                        retryDeleteAfterConsent = false
+
+                        result.error(
+                            "DELETE_ERROR",
+                            e.message ?: "Unable to delete this saved item.",
+                            null
+                        )
                     }
                 }
 
@@ -1980,6 +2205,57 @@ class MainActivity : FlutterActivity() {
             resultCode,
             data
         )
+
+        if (requestCode == DELETE_SAVED_REQUEST) {
+            val callback = pendingDeleteResult
+            val uri = pendingDeleteUri
+            val shouldRetry = retryDeleteAfterConsent
+
+            pendingDeleteResult = null
+            pendingDeleteUri = null
+            retryDeleteAfterConsent = false
+
+            if (callback == null) return
+
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                callback.success(false)
+                return
+            }
+
+            try {
+                if (shouldRetry) {
+                    // Android 10 grants permission; we then delete.
+                    val removed = contentResolver.delete(
+                        uri,
+                        null,
+                        null
+                    )
+
+                    callback.success(removed > 0)
+                } else {
+                    // Android 11+ performs deletion through its prompt.
+                    val stillExists = contentResolver.query(
+                        uri,
+                        arrayOf(MediaStore.MediaColumns._ID),
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+                        cursor.moveToFirst()
+                    } ?: false
+
+                    callback.success(!stillExists)
+                }
+            } catch (e: Exception) {
+                callback.error(
+                    "DELETE_ERROR",
+                    e.message ?: "Unable to finish deleting this item.",
+                    null
+                )
+            }
+
+            return
+        }
 
         val source =
             when (requestCode) {

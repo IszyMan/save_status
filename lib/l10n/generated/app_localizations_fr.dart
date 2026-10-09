@@ -964,4 +964,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get allowAccessButton => 'Autoriser l’accès 👈';
+
+  @override
+  String get repost => 'Republier';
+
+  @override
+  String get save => 'Enregistrer';
+
+  @override
+  String get delete => 'Supprimer';
 }
