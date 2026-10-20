@@ -365,6 +365,58 @@
         "repost": "Republicar",
         "save": "Guardar",
         "delete": "Eliminar",
-        "setupFolderInstructions": "**¡Solo un paso!** Elige tu aplicación abajo. Cuando se cierre la guía, toca **Usar esta carpeta** y luego **Permitir** para ver tus estados."
+        "setupFolderInstructions": "**Pasos para configurar el acceso a los estados**\n\n• Elige tu aplicación a continuación\n• Toca **Usar esta carpeta**\n• Luego toca **Permitir** para ver los estados.",
+        "folderTab": "Carpetas",
+        "folderNew": "Nueva carpeta",
+        "folderRename": "Renombrar carpeta",
+        "folderName": "Nombre de la carpeta",
+        "folderCreate": "Crear",
+        "folderDuplicateName": "Ya existe una carpeta con este nombre.",
+        "folderNameInvalid": "Introduce un nombre de entre 1 y 40 caracteres.",
+        "folderOperationFailed": "No se pudieron actualizar las carpetas. Inténtalo de nuevo.",
+        "folderMoveTo": "Mover a una carpeta",
+        "folderNoFolder": "Sin carpeta",
+        "folderKeepInAll": "Mantener en Fotos y Vídeos sin una carpeta",
+        "folderItemCount": "{count, plural, =0{Sin elementos} =1{1 elemento} other{{count} elementos}}",
+        "@folderItemCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderOptions": "Opciones",
+        "folderSelect": "Seleccionar",
+        "folderDelete": "Eliminar carpeta",
+        "folderDeleteTitle": "¿Eliminar «{name}»?",
+        "@folderDeleteTitle": {
+          "placeholders": {
+            "name": {
+              "type": "String"
+            }
+          }
+        },
+        "folderDeleteExplanation": "Tus fotos y vídeos permanecerán en Fotos y Vídeos. Solo se eliminará esta carpeta.",
+        "folderItemsMoved": "Carpeta actualizada.",
+        "folderEmptyList": "Crea tu primera carpeta para organizar tus fotos y vídeos guardados.",
+        "folderSelectedCount": "{count, plural, =0{Ningún elemento seleccionado} =1{1 elemento seleccionado} other{{count} elementos seleccionados}}",
+        "@folderSelectedCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderSelectAll": "Seleccionar todo",
+        "folderMove": "Mover",
+        "folderNoItems": "Todavía no hay elementos guardados aquí",
+        "folderAddHint": "En Guardados, selecciona fotos o vídeos y elige Mover a una carpeta.",
+        "folderSaveHint": "Los estados que guardes aparecerán aquí.",
+        "folderRetry": "Intentar de nuevo",
+        "folderLoadFailed": "No se pudieron cargar los archivos guardados o las carpetas. Inténtalo de nuevo.",
+        "folderOpenFailed": "No se pudo abrir este elemento guardado. Actualiza e inténtalo de nuevo.",
+        "folderStatusSaved": "Estado guardado",
+        "folderAddTo": "Añadir a una carpeta",
+        "folderMovedSuccess": "{count, plural, =1{Estado movido a «{name}» correctamente.} other{{count} estados movidos a «{name}» correctamente.}}"
 
 }

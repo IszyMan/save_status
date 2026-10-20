@@ -299,7 +299,7 @@ abstract class AppLocalizations {
   /// No description provided for @setUpStatusAccess.
   ///
   /// In en, this message translates to:
-  /// **'Set up status access'**
+  /// **'Set Up Status Access'**
   String get setUpStatusAccess;
 
   /// No description provided for @whatsappNotFound.
@@ -1709,8 +1709,194 @@ abstract class AppLocalizations {
   /// No description provided for @setupFolderInstructions.
   ///
   /// In en, this message translates to:
-  /// **'**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses.'**
+  /// **'**Steps to Set Up Status Access**\n\n• Choose your app below\n• Next click **Use this folder**\n• Then tap **Allow** to view statuses.'**
   String get setupFolderInstructions;
+
+  /// No description provided for @folderTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get folderTab;
+
+  /// No description provided for @folderNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get folderNew;
+
+  /// No description provided for @folderRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get folderRename;
+
+  /// No description provided for @folderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get folderName;
+
+  /// No description provided for @folderCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get folderCreate;
+
+  /// No description provided for @folderDuplicateName.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name already exists.'**
+  String get folderDuplicateName;
+
+  /// No description provided for @folderNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name between 1 and 40 characters.'**
+  String get folderNameInvalid;
+
+  /// No description provided for @folderOperationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update folders. Please try again.'**
+  String get folderOperationFailed;
+
+  /// No description provided for @folderMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get folderMoveTo;
+
+  /// No description provided for @folderNoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get folderNoFolder;
+
+  /// No description provided for @folderKeepInAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep in Photos and Videos without a folder'**
+  String get folderKeepInAll;
+
+  /// No description provided for @folderItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No items} =1{1 item} other{{count} items}}'**
+  String folderItemCount(int count);
+
+  /// No description provided for @folderOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get folderOptions;
+
+  /// No description provided for @folderSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get folderSelect;
+
+  /// No description provided for @folderDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get folderDelete;
+
+  /// No description provided for @folderDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete “{name}”?'**
+  String folderDeleteTitle(String name);
+
+  /// No description provided for @folderDeleteExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photos and videos will stay in Photos and Videos. Only this folder will be removed.'**
+  String get folderDeleteExplanation;
+
+  /// No description provided for @folderItemsMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder updated.'**
+  String get folderItemsMoved;
+
+  /// No description provided for @folderEmptyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first folder to organize saved photos and videos.'**
+  String get folderEmptyList;
+
+  /// No description provided for @folderSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String folderSelectedCount(int count);
+
+  /// No description provided for @folderSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get folderSelectAll;
+
+  /// No description provided for @folderMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get folderMove;
+
+  /// No description provided for @folderNoItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved items here yet'**
+  String get folderNoItems;
+
+  /// No description provided for @folderAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In Saved, select photos or videos and choose Move to folder.'**
+  String get folderAddHint;
+
+  /// No description provided for @folderSaveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Statuses you save will appear here.'**
+  String get folderSaveHint;
+
+  /// No description provided for @folderRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get folderRetry;
+
+  /// No description provided for @folderLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load saved media or folders. Please try again.'**
+  String get folderLoadFailed;
+
+  /// No description provided for @folderOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this saved item. Refresh and try again.'**
+  String get folderOpenFailed;
+
+  /// No description provided for @folderStatusSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Status saved'**
+  String get folderStatusSaved;
+
+  /// No description provided for @folderAddTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to folder'**
+  String get folderAddTo;
+
+  /// No description provided for @folderMovedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Status moved to “{name}” successfully.} other{{count} statuses moved to “{name}” successfully.}}'**
+  String folderMovedSuccess(int count, String name);
 }
 
 class _AppLocalizationsDelegate

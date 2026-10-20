@@ -974,5 +974,132 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get setupFolderInstructions =>
-      '**Só mais um passo!** Escolha seu aplicativo abaixo. Quando a orientação fechar, toque em **Usar esta pasta** e depois em **Permitir** para ver seus status.';
+      '**Passos para configurar o acesso aos status**\n\n• Escolha seu aplicativo abaixo\n• Toque em **Usar esta pasta**\n• Depois toque em **Permitir** para visualizar os status.';
+
+  @override
+  String get folderTab => 'Pastas';
+
+  @override
+  String get folderNew => 'Nova pasta';
+
+  @override
+  String get folderRename => 'Renomear pasta';
+
+  @override
+  String get folderName => 'Nome da pasta';
+
+  @override
+  String get folderCreate => 'Criar';
+
+  @override
+  String get folderDuplicateName => 'Já existe uma pasta com esse nome.';
+
+  @override
+  String get folderNameInvalid => 'Digite um nome de 1 a 40 caracteres.';
+
+  @override
+  String get folderOperationFailed =>
+      'Não foi possível atualizar as pastas. Tente novamente.';
+
+  @override
+  String get folderMoveTo => 'Mover para uma pasta';
+
+  @override
+  String get folderNoFolder => 'Sem pasta';
+
+  @override
+  String get folderKeepInAll => 'Manter em Fotos e Vídeos sem uma pasta';
+
+  @override
+  String folderItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count itens',
+      one: '1 item',
+      zero: 'Nenhum item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderOptions => 'Opções';
+
+  @override
+  String get folderSelect => 'Selecionar';
+
+  @override
+  String get folderDelete => 'Excluir pasta';
+
+  @override
+  String folderDeleteTitle(String name) {
+    return 'Excluir “$name”?';
+  }
+
+  @override
+  String get folderDeleteExplanation =>
+      'Suas fotos e vídeos continuarão em Fotos e Vídeos. Apenas esta pasta será excluída.';
+
+  @override
+  String get folderItemsMoved => 'Pasta atualizada.';
+
+  @override
+  String get folderEmptyList =>
+      'Crie sua primeira pasta para organizar suas fotos e vídeos salvos.';
+
+  @override
+  String folderSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count itens selecionados',
+      one: '1 item selecionado',
+      zero: 'Nenhum item selecionado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderSelectAll => 'Selecionar tudo';
+
+  @override
+  String get folderMove => 'Mover';
+
+  @override
+  String get folderNoItems => 'Ainda não há itens salvos aqui';
+
+  @override
+  String get folderAddHint =>
+      'Em Salvos, selecione fotos ou vídeos e escolha Mover para uma pasta.';
+
+  @override
+  String get folderSaveHint => 'Os status que você salvar aparecerão aqui.';
+
+  @override
+  String get folderRetry => 'Tentar novamente';
+
+  @override
+  String get folderLoadFailed =>
+      'Não foi possível carregar as mídias salvas ou as pastas. Tente novamente.';
+
+  @override
+  String get folderOpenFailed =>
+      'Não foi possível abrir este item salvo. Atualize e tente novamente.';
+
+  @override
+  String get folderStatusSaved => 'Status salvo';
+
+  @override
+  String get folderAddTo => 'Adicionar a uma pasta';
+
+  @override
+  String folderMovedSuccess(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count status movidos para “$name” com sucesso.',
+      one: 'Status movido para “$name” com sucesso.',
+    );
+    return '$_temp0';
+  }
 }

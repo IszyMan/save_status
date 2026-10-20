@@ -974,5 +974,133 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get setupFolderInstructions =>
-      '**¡Solo un paso!** Elige tu aplicación abajo. Cuando se cierre la guía, toca **Usar esta carpeta** y luego **Permitir** para ver tus estados.';
+      '**Pasos para configurar el acceso a los estados**\n\n• Elige tu aplicación a continuación\n• Toca **Usar esta carpeta**\n• Luego toca **Permitir** para ver los estados.';
+
+  @override
+  String get folderTab => 'Carpetas';
+
+  @override
+  String get folderNew => 'Nueva carpeta';
+
+  @override
+  String get folderRename => 'Renombrar carpeta';
+
+  @override
+  String get folderName => 'Nombre de la carpeta';
+
+  @override
+  String get folderCreate => 'Crear';
+
+  @override
+  String get folderDuplicateName => 'Ya existe una carpeta con este nombre.';
+
+  @override
+  String get folderNameInvalid =>
+      'Introduce un nombre de entre 1 y 40 caracteres.';
+
+  @override
+  String get folderOperationFailed =>
+      'No se pudieron actualizar las carpetas. Inténtalo de nuevo.';
+
+  @override
+  String get folderMoveTo => 'Mover a una carpeta';
+
+  @override
+  String get folderNoFolder => 'Sin carpeta';
+
+  @override
+  String get folderKeepInAll => 'Mantener en Fotos y Vídeos sin una carpeta';
+
+  @override
+  String folderItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementos',
+      one: '1 elemento',
+      zero: 'Sin elementos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderOptions => 'Opciones';
+
+  @override
+  String get folderSelect => 'Seleccionar';
+
+  @override
+  String get folderDelete => 'Eliminar carpeta';
+
+  @override
+  String folderDeleteTitle(String name) {
+    return '¿Eliminar «$name»?';
+  }
+
+  @override
+  String get folderDeleteExplanation =>
+      'Tus fotos y vídeos permanecerán en Fotos y Vídeos. Solo se eliminará esta carpeta.';
+
+  @override
+  String get folderItemsMoved => 'Carpeta actualizada.';
+
+  @override
+  String get folderEmptyList =>
+      'Crea tu primera carpeta para organizar tus fotos y vídeos guardados.';
+
+  @override
+  String folderSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementos seleccionados',
+      one: '1 elemento seleccionado',
+      zero: 'Ningún elemento seleccionado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderSelectAll => 'Seleccionar todo';
+
+  @override
+  String get folderMove => 'Mover';
+
+  @override
+  String get folderNoItems => 'Todavía no hay elementos guardados aquí';
+
+  @override
+  String get folderAddHint =>
+      'En Guardados, selecciona fotos o vídeos y elige Mover a una carpeta.';
+
+  @override
+  String get folderSaveHint => 'Los estados que guardes aparecerán aquí.';
+
+  @override
+  String get folderRetry => 'Intentar de nuevo';
+
+  @override
+  String get folderLoadFailed =>
+      'No se pudieron cargar los archivos guardados o las carpetas. Inténtalo de nuevo.';
+
+  @override
+  String get folderOpenFailed =>
+      'No se pudo abrir este elemento guardado. Actualiza e inténtalo de nuevo.';
+
+  @override
+  String get folderStatusSaved => 'Estado guardado';
+
+  @override
+  String get folderAddTo => 'Añadir a una carpeta';
+
+  @override
+  String folderMovedSuccess(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count estados movidos a «$name» correctamente.',
+      one: 'Estado movido a «$name» correctamente.',
+    );
+    return '$_temp0';
+  }
 }

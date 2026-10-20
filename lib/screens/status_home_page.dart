@@ -11,6 +11,8 @@ import '../widgets/status_thumbnail.dart';
 import '../screens/settings.dart';
 import '../widgets/status_access_setup.dart';
 import 'status_source_setup_screen.dart';
+import 'saved_library_page.dart';
+import '../widgets/saved_folder_picker.dart';
 
 // ============================================================================
 // STATUS HOME PAGE
@@ -19,10 +21,7 @@ import 'status_source_setup_screen.dart';
 class StatusHomePage extends StatefulWidget {
   final ValueChanged<Locale> onLanguageChanged;
 
-  const StatusHomePage({
-    super.key,
-    required this.onLanguageChanged,
-  });
+  const StatusHomePage({super.key, required this.onLanguageChanged});
 
   @override
   State<StatusHomePage> createState() => _StatusHomePageState();
@@ -30,7 +29,6 @@ class StatusHomePage extends StatefulWidget {
 
 class _StatusHomePageState extends State<StatusHomePage> {
   final StatusService _statusService = StatusService();
-
 
   // ==========================================================================
   // APP STATE
@@ -45,7 +43,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
   String? _lastSelectedSource;
   String? _selectedSource;
 
-
   bool _loadingAppState = true;
 
   // 0 = Statuses
@@ -53,8 +50,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // 2 = Settings
   int _currentTab = 0;
   final PageController _pageController = PageController();
-
-
 
   // Five swipe pages:
   // 0: Status photos
@@ -73,7 +68,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
   List<Map<String, dynamic>> _savedStatuses = [];
 
   bool _loadingStatuses = false;
-  bool _loadingSaved = false;
 
   final Map<String, Uint8List> _thumbnailCache = {};
 
@@ -116,20 +110,15 @@ class _StatusHomePageState extends State<StatusHomePage> {
       if (!mounted) return;
 
       setState(() {
-        _whatsappInstalled =
-            data['whatsappInstalled'] == true;
+        _whatsappInstalled = data['whatsappInstalled'] == true;
 
-        _businessInstalled =
-            data['businessInstalled'] == true;
+        _businessInstalled = data['businessInstalled'] == true;
 
-        _whatsappConfigured =
-            data['whatsappConfigured'] == true;
+        _whatsappConfigured = data['whatsappConfigured'] == true;
 
-        _businessConfigured =
-            data['businessConfigured'] == true;
+        _businessConfigured = data['businessConfigured'] == true;
 
-        _lastSelectedSource =
-            data['lastSelectedSource']?.toString();
+        _lastSelectedSource = data['lastSelectedSource']?.toString();
       });
 
       await _selectInitialSource();
@@ -169,9 +158,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
         _selectedSource = _lastSelectedSource;
       });
 
-      await _loadStatuses(
-        _lastSelectedSource!,
-      );
+      await _loadStatuses(_lastSelectedSource!);
 
       return;
     }
@@ -187,23 +174,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
     await _loadStatuses(source);
   }
 
-  // ==========================================================================
-  // INSTALLED SOURCES
-  // ==========================================================================
-
-  List<String> get _installedSources {
-    final sources = <String>[];
-
-    if (_whatsappInstalled) {
-      sources.add('whatsapp');
-    }
-
-    if (_businessInstalled) {
-      sources.add('business');
-    }
-
-    return sources;
-  }
 
   bool _isConfigured(String source) {
     if (source == 'business') {
@@ -249,36 +219,26 @@ class _StatusHomePageState extends State<StatusHomePage> {
     }
 
     try {
-      final opened = await _statusService.openWhatsApp(
-        source,
-      );
+      final opened = await _statusService.openWhatsApp(source);
 
       if (!mounted) return;
 
       if (!opened) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              l10n.sourceNotInstalled(
-                _sourceName(source),
-              ),
-            ),
+            content: Text(l10n.sourceNotInstalled(_sourceName(source))),
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      debugPrint(
-        'Unable to open WhatsApp: $e',
-      );
+      debugPrint('Unable to open WhatsApp: $e');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.unableToOpenWhatsApp,
-          ),
+          content: Text(l10n.unableToOpenWhatsApp),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -312,20 +272,14 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              l10n.sourceStatusAccessReady(
-                _sourceName(source),
-              ),
-            ),
+            content: Text(l10n.sourceStatusAccessReady(_sourceName(source))),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              l10n.pleaseSelectStatusesFolder,
-            ),
+            content: Text(l10n.pleaseSelectStatusesFolder),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -337,11 +291,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.unableToSetUpStatusAccess(
-              e.toString(),
-            ),
-          ),
+          content: Text(l10n.unableToSetUpStatusAccess(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -364,34 +314,19 @@ class _StatusHomePageState extends State<StatusHomePage> {
     }
 
     try {
-      final statuses =
-      await _statusService.getStatuses(
-        source,
-      );
+      final statuses = await _statusService.getStatuses(source);
 
-      statuses.sort(
-            (a, b) {
-          final aTime = int.tryParse(
-            a['lastModified']?.toString() ?? '',
-          ) ??
-              0;
+      statuses.sort((a, b) {
+        final aTime = int.tryParse(a['lastModified']?.toString() ?? '') ?? 0;
 
-          final bTime = int.tryParse(
-            b['lastModified']?.toString() ?? '',
-          ) ??
-              0;
+        final bTime = int.tryParse(b['lastModified']?.toString() ?? '') ?? 0;
 
-          return bTime.compareTo(aTime);
-        },
-      );
+        return bTime.compareTo(aTime);
+      });
 
-      final openedUris =
-      await _statusService.getOpenedStatusUris(
-        source,
-      );
+      final openedUris = await _statusService.getOpenedStatusUris(source);
 
-      final downloadedUris =
-      await _statusService.getDownloadedStatusUris(
+      final downloadedUris = await _statusService.getDownloadedStatusUris(
         source,
       );
 
@@ -409,9 +344,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
           ..addAll(downloadedUris);
       });
     } catch (e) {
-      debugPrint(
-        'Unable to load statuses: $e',
-      );
+      debugPrint('Unable to load statuses: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -426,31 +359,20 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _loadSavedStatuses() async {
-    if (mounted) {
-      setState(() {
-        _loadingSaved = true;
-      });
-    }
-
     try {
-      final saved =
-      await _statusService.getSavedStatuses();
+      final saved = await _statusService.getSavedStatuses();
 
       if (!mounted) return;
 
       setState(() {
         _savedStatuses = saved;
       });
-    } catch (e) {
+
+      SavedLibraryPage.refreshMedia();
+    } catch (error) {
       debugPrint(
-        'Unable to load saved statuses: $e',
+        'Unable to load saved statuses: $error',
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loadingSaved = false;
-        });
-      }
     }
   }
 
@@ -470,13 +392,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
     });
 
     try {
-      await _statusService.setLastSelectedSource(
-        source,
-      );
+      await _statusService.setLastSelectedSource(source);
     } catch (e) {
-      debugPrint(
-        'Unable to save selected source: $e',
-      );
+      debugPrint('Unable to save selected source: $e');
     }
 
     await _loadStatuses(source);
@@ -497,10 +415,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
   Future<void> _goToPage(int page) async {
     if (!mounted || !_pageController.hasClients) return;
-    if (page < 0 || page > 4) return;
+    if (page < 0 || page > 5) return;
 
-    final actualPage =
-        _pageController.page ?? _currentPage.toDouble();
+    final actualPage = _pageController.page ?? _currentPage.toDouble();
 
     if ((actualPage - page).abs() < 0.01) return;
 
@@ -518,15 +435,22 @@ class _StatusHomePageState extends State<StatusHomePage> {
   void _onSwipePageChanged(int page) {
     if (!mounted) return;
 
+    SavedLibraryPage.dismissSelection();
+
     setState(() {
       _currentPage = page;
 
       if (page <= 1) {
         _currentTab = 0;
         _statusFilter = page == 0 ? 'images' : 'videos';
-      } else if (page <= 3) {
+      } else if (page <= 4) {
         _currentTab = 1;
-        _savedFilter = page == 2 ? 'images' : 'videos';
+
+        _savedFilter = page == 2
+            ? 'images'
+            : page == 3
+            ? 'videos'
+            : 'folders';
       } else {
         _currentTab = 2;
       }
@@ -536,19 +460,21 @@ class _StatusHomePageState extends State<StatusHomePage> {
   Future<void> _changeTab(int index) async {
     switch (index) {
       case 0:
-        await _goToPage(
-          _statusFilter == 'videos' ? 1 : 0,
-        );
+        await _goToPage(_statusFilter == 'videos' ? 1 : 0);
         break;
 
       case 1:
         await _goToPage(
-          _savedFilter == 'videos' ? 3 : 2,
+          _savedFilter == 'folders'
+              ? 4
+              : _savedFilter == 'videos'
+              ? 3
+              : 2,
         );
         break;
 
       case 2:
-        await _goToPage(4);
+        await _goToPage(5);
         break;
     }
   }
@@ -558,47 +484,36 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   List<Map<String, dynamic>> _filterMedia(
-      List<Map<String, dynamic>> items,
-      String filter,
-      ) {
-    return items.where(
-          (status) {
-        final mime = (status['mimeType'] ?? '')
-            .toString()
-            .toLowerCase();
+    List<Map<String, dynamic>> items,
+    String filter,
+  ) {
+    return items.where((status) {
+      final mime = (status['mimeType'] ?? '').toString().toLowerCase();
 
-        if (filter == 'videos') {
-          return mime.startsWith('video/') ||
-              _isVideo(status);
-        }
+      if (filter == 'videos') {
+        return mime.startsWith('video/') || _isVideo(status);
+      }
 
-        if (filter == 'images') {
-          return mime.startsWith('image/');
-        }
+      if (filter == 'images') {
+        return mime.startsWith('image/');
+      }
 
-        return false;
-      },
-    ).toList();
+      return false;
+    }).toList();
   }
-
-
 
   // ==========================================================================
   // VIDEO CHECK
   // ==========================================================================
 
   bool _isVideo(Map<String, dynamic> status) {
-    final mime = (status['mimeType'] ?? '')
-        .toString()
-        .toLowerCase();
+    final mime = (status['mimeType'] ?? '').toString().toLowerCase();
 
     if (mime.startsWith('video/')) {
       return true;
     }
 
-    final name = (status['name'] ?? '')
-        .toString()
-        .toLowerCase();
+    final name = (status['name'] ?? '').toString().toLowerCase();
 
     return name.endsWith('.mp4') ||
         name.endsWith('.3gp') ||
@@ -611,11 +526,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // STATUS OPENED CHECK
   // ==========================================================================
 
-  bool _isStatusNew(
-      Map<String, dynamic> status,
-      ) {
-    final uri =
-        status['uri']?.toString() ?? '';
+  bool _isStatusNew(Map<String, dynamic> status) {
+    final uri = status['uri']?.toString() ?? '';
 
     if (uri.isEmpty) {
       return false;
@@ -628,11 +540,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // STATUS DOWNLOADED CHECK
   // ==========================================================================
 
-  bool _isStatusDownloaded(
-      Map<String, dynamic> status,
-      ) {
-    final uri =
-        status['uri']?.toString() ?? '';
+  bool _isStatusDownloaded(Map<String, dynamic> status) {
+    final uri = status['uri']?.toString() ?? '';
 
     if (uri.isEmpty) {
       return false;
@@ -645,22 +554,16 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // MARK STATUS DOWNLOADED
   // ==========================================================================
 
-  Future<void> _markStatusDownloaded(
-      Map<String, dynamic> status,
-      ) async {
+  Future<void> _markStatusDownloaded(Map<String, dynamic> status) async {
     final source = _selectedSource;
 
-    final uri =
-        status['uri']?.toString() ?? '';
+    final uri = status['uri']?.toString() ?? '';
 
     if (source == null || uri.isEmpty) {
       return;
     }
 
-    await _statusService.markStatusDownloaded(
-      source: source,
-      uri: uri,
-    );
+    await _statusService.markStatusDownloaded(source: source, uri: uri);
 
     if (!mounted) {
       return;
@@ -676,40 +579,31 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Future<void> _openStatus(
-      Map<String, dynamic> status,{
-        bool isSavedItem = false,
-    }) async {
+    Map<String, dynamic> status, {
+    bool isSavedItem = false,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
 
     try {
-      final path =
-      await _statusService.prepareStatus(
+      final path = await _statusService.prepareStatus(
         uri: status['uri'],
         name: status['name'],
       );
 
       if (path == null || path.isEmpty) {
-        throw Exception(
-          'Unable to prepare status',
-        );
+        throw Exception('Unable to prepare status');
       }
 
       final source = _selectedSource;
 
       if (source == null) {
-        throw Exception(
-          'No WhatsApp source selected',
-        );
+        throw Exception('No WhatsApp source selected');
       }
 
-      final uri =
-          status['uri']?.toString() ?? '';
+      final uri = status['uri']?.toString() ?? '';
 
       if (uri.isNotEmpty) {
-        await _statusService.markStatusOpened(
-          source: source,
-          uri: uri,
-        );
+        await _statusService.markStatusOpened(source: source, uri: uri);
 
         if (mounted) {
           setState(() {
@@ -736,19 +630,13 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
       await _loadSavedStatuses();
     } catch (e) {
-      debugPrint(
-        'Unable to open status: $e',
-      );
+      debugPrint('Unable to open status: $e');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.unableToOpenStatus(
-              e.toString(),
-            ),
-          ),
+          content: Text(l10n.unableToOpenStatus(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -759,15 +647,9 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // THUMBNAIL CACHE
   // ==========================================================================
 
-  void _cacheThumbnail(
-      String uri,
-      Uint8List bytes,
-      ) {
-    if (_thumbnailCache.length >= 100 &&
-        !_thumbnailCache.containsKey(uri)) {
-      _thumbnailCache.remove(
-        _thumbnailCache.keys.first,
-      );
+  void _cacheThumbnail(String uri, Uint8List bytes) {
+    if (_thumbnailCache.length >= 100 && !_thumbnailCache.containsKey(uri)) {
+      _thumbnailCache.remove(_thumbnailCache.keys.first);
     }
 
     _thumbnailCache[uri] = bytes;
@@ -787,12 +669,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (setupContext) =>
-                  StatusSourceSetupScreen(
-                    onComplete: () {
-                      Navigator.of(setupContext).pop();
-                    },
-                  ),
+              builder: (setupContext) => StatusSourceSetupScreen(
+                onComplete: () {
+                  Navigator.of(setupContext).pop();
+                },
+              ),
             ),
           );
 
@@ -804,7 +685,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
-
   // ==========================================================================
   // SOURCE SELECTOR
   // ==========================================================================
@@ -813,17 +693,14 @@ class _StatusHomePageState extends State<StatusHomePage> {
     final source = _selectedSource;
     final configuredSources = _configuredSources;
 
-    if (source == null ||
-        !configuredSources.contains(source)) {
+    if (source == null || !configuredSources.contains(source)) {
       return const SizedBox.shrink();
     }
 
     // Only one source is configured.
     if (configuredSources.length == 1) {
       return Padding(
-        padding: const EdgeInsets.only(
-          right: 4,
-        ),
+        padding: const EdgeInsets.only(right: 4),
         child: Center(
           child: Text(
             source == 'business' ? 'Business' : 'WhatsApp',
@@ -838,60 +715,45 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
     // Both WhatsApp and WhatsApp Business are configured.
     return Padding(
-      padding: const EdgeInsets.only(
-        right: 4,
-      ),
+      padding: const EdgeInsets.only(right: 4),
       child: PopupMenuButton<String>(
         onSelected: _selectSource,
         itemBuilder: (context) {
-          return configuredSources.map(
-                (item) {
-              final selected =
-                  item == _selectedSource;
+          return configuredSources.map((item) {
+            final selected = item == _selectedSource;
 
-              return PopupMenuItem<String>(
-                value: item,
-                child: Row(
-                  children: [
+            return PopupMenuItem<String>(
+              value: item,
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.chat_rounded,
+                    size: 20,
+                    color: AppColors.primaryDark,
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Text(item == 'business' ? 'Business' : 'WhatsApp'),
+                  ),
+
+                  if (selected)
                     const Icon(
-                      Icons.chat_rounded,
+                      Icons.check,
                       size: 20,
                       color: AppColors.primaryDark,
                     ),
-
-                    const SizedBox(
-                      width: 10,
-                    ),
-
-                    Expanded(
-                      child: Text(
-                        item == 'business' ? 'Business' : 'WhatsApp',
-                      ),
-                    ),
-
-                    if (selected)
-                      const Icon(
-                        Icons.check,
-                        size: 20,
-                        color: AppColors.primaryDark,
-                      ),
-                  ],
-                ),
-              );
-            },
-          ).toList();
+                ],
+              ),
+            );
+          }).toList();
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 7,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(
-              alpha: 0.18,
-            ),
-            borderRadius:
-            BorderRadius.circular(10),
+            color: Colors.white.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -904,9 +766,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 ),
               ),
 
-              const SizedBox(
-                width: 3,
-              ),
+              const SizedBox(width: 3),
 
               const Icon(
                 Icons.keyboard_arrow_down,
@@ -920,13 +780,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
     );
   }
 
-
-
   Widget _buildRefreshButton() {
     final source = _selectedSource;
 
-    if (source == null ||
-        !_isConfigured(source)) {
+    if (source == null || !_isConfigured(source)) {
       return const SizedBox.shrink();
     }
 
@@ -934,24 +791,18 @@ class _StatusHomePageState extends State<StatusHomePage> {
       onPressed: _loadingStatuses
           ? null
           : () {
-        _loadStatuses(source);
-      },
+              _loadStatuses(source);
+            },
       icon: _loadingStatuses
           ? const SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor:
-          AlwaysStoppedAnimation<Color>(
-            Colors.white,
-          ),
-        ),
-      )
-          : const Icon(
-        Icons.refresh,
-        color: Colors.white,
-      ),
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : const Icon(Icons.refresh, color: Colors.white),
     );
   }
 
@@ -978,8 +829,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
         onRefresh: onRefresh,
         title: emptyTitle,
         message: emptyMessage,
-        showStatusInstructions:
-        showStatusInstructions,
+        showStatusInstructions: showStatusInstructions,
       );
     }
 
@@ -987,17 +837,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
       color: AppColors.primaryDark,
       onRefresh: onRefresh,
       child: GridView.builder(
-        physics:
-        const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          24,
-        ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         cacheExtent: 800,
-        gridDelegate:
-        const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
@@ -1007,9 +850,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
         itemBuilder: (context, index) {
           final status = items[index];
 
-          final uri =
-              status['uri']?.toString() ??
-                  'status_$index';
+          final uri = status['uri']?.toString() ?? 'status_$index';
 
           return KeyedSubtree(
             key: ValueKey(uri),
@@ -1029,39 +870,29 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildMediaTile(
-      Map<String, dynamic> status, {
-        bool showDownloadButton = true,
-        bool isSavedItem = false,
-      }) {
-    final uri =
-        status['uri']?.toString() ?? '';
+    Map<String, dynamic> status, {
+    bool showDownloadButton = true,
+    bool isSavedItem = false,
+  }) {
+    final uri = status['uri']?.toString() ?? '';
 
     final isVideo = _isVideo(status);
 
     return GestureDetector(
       onTap: () {
-        _openStatus(
-          status,
-          isSavedItem: isSavedItem,
-        );
+        _openStatus(status, isSavedItem: isSavedItem);
       },
       child: ClipRRect(
-        borderRadius:
-        BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16),
         child: Stack(
           fit: StackFit.expand,
           children: [
             StatusThumbnail(
               status: status,
-              cachedBytes:
-              _thumbnailCache[uri],
-              statusService:
-              _statusService,
+              cachedBytes: _thumbnailCache[uri],
+              statusService: _statusService,
               onLoaded: (bytes) {
-                _cacheThumbnail(
-                  uri,
-                  bytes,
-                );
+                _cacheThumbnail(uri, bytes);
               },
             ),
 
@@ -1070,10 +901,8 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 child: Container(
                   width: 50,
                   height: 50,
-                  decoration:
-                  BoxDecoration(
-                    color: Colors.black
-                        .withValues(alpha: 0.55),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1094,16 +923,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
                       : AppColors.primaryDark,
                   shape: const CircleBorder(),
                   elevation: 3,
-                  shadowColor: Colors.black.withValues(
-                    alpha: 0.25,
-                  ),
+                  shadowColor: Colors.black.withValues(alpha: 0.25),
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      _openStatus(
-                        status,
-                        isSavedItem: isSavedItem,
-                      );
+                      _openStatus(status, isSavedItem: isSavedItem);
                     },
                     child: SizedBox(
                       width: 35,
@@ -1137,28 +961,18 @@ class _StatusHomePageState extends State<StatusHomePage> {
   }) {
     final l10n = AppLocalizations.of(context)!;
 
-    final isBusiness =
-        _selectedSource == 'business';
+    final isBusiness = _selectedSource == 'business';
 
-    final whatsappName =
-    isBusiness
-        ? 'WhatsApp Business'
-        : 'WhatsApp';
+    final whatsappName = isBusiness ? 'WhatsApp Business' : 'WhatsApp';
 
     return RefreshIndicator(
       color: AppColors.primaryDark,
       onRefresh: onRefresh,
       child: ListView(
-        physics:
-        const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 32,
-        ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
         children: [
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
 
           Icon(
             Icons.photo_library_outlined,
@@ -1166,50 +980,34 @@ class _StatusHomePageState extends State<StatusHomePage> {
             color: AppColors.primary,
           ),
 
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
 
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
           ),
 
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
 
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
           ),
 
           if (showStatusInstructions) ...[
-            const SizedBox(
-              height: 28,
-            ),
+            const SizedBox(height: 28),
 
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius:
-                BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.divider,
-                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
               ),
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     l10n.howToSaveAStatus,
@@ -1220,74 +1018,47 @@ class _StatusHomePageState extends State<StatusHomePage> {
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 18,
-                  ),
+                  const SizedBox(height: 18),
 
                   _buildInstructionStep(
                     number: '1',
-                    title: l10n.viewAStatusOn(
-                      whatsappName,
-                    ),
-                    description:l10n.openSourceAndViewStatus(
-                      whatsappName,
-                    ),
+                    title: l10n.viewAStatusOn(whatsappName),
+                    description: l10n.openSourceAndViewStatus(whatsappName),
                   ),
 
-                  const SizedBox(
-                    height: 18,
-                  ),
+                  const SizedBox(height: 18),
 
                   _buildInstructionStep(
                     number: '2',
                     title: l10n.openSaveStatusly,
-                    description:
-                    l10n.returnToSaveStatuslyAfterViewing,
+                    description: l10n.returnToSaveStatuslyAfterViewing,
                   ),
 
-                  const SizedBox(
-                    height: 18,
-                  ),
+                  const SizedBox(height: 18),
 
                   _buildInstructionStep(
                     number: '3',
                     title: l10n.saveOrDownloadTheStatus,
-                    description:
-                    l10n.viewedStatusWillAppearHere,
+                    description: l10n.viewedStatusWillAppearHere,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 22,
-            ),
+            const SizedBox(height: 22),
 
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _openWhatsApp,
-                icon: const Icon(
-                  Icons.open_in_new,
-                ),
-                label: Text(
-                  l10n.openSource(
-                    whatsappName,
-                  ),
-                ),
+                icon: const Icon(Icons.open_in_new),
+                label: Text(l10n.openSource(whatsappName)),
                 style: FilledButton.styleFrom(
-                  backgroundColor:
-                  AppColors.primary,
-                  foregroundColor:
-                  Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(
-                    vertical: 14,
-                  ),
-                  shape:
-                  RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(12),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
@@ -1304,8 +1075,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     required String description,
   }) {
     return Row(
-      crossAxisAlignment:
-      CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 30,
@@ -1324,14 +1094,11 @@ class _StatusHomePageState extends State<StatusHomePage> {
           ),
         ),
 
-        const SizedBox(
-          width: 12,
-        ),
+        const SizedBox(width: 12),
 
         Expanded(
           child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
@@ -1342,9 +1109,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 ),
               ),
 
-              const SizedBox(
-                height: 4,
-              ),
+              const SizedBox(height: 4),
 
               Text(
                 description,
@@ -1369,9 +1134,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
     final l10n = AppLocalizations.of(context)!;
 
     if (_loadingAppState) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     final source = _selectedSource;
@@ -1386,9 +1149,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
       items: _filterMedia(_statuses, filter),
       loading: _loadingStatuses,
       onRefresh: () => _loadStatuses(source),
-      emptyTitle: showingVideos
-          ? l10n.noVideosFound
-          : l10n.noImagesFound,
+      emptyTitle: showingVideos ? l10n.noVideosFound : l10n.noImagesFound,
       emptyMessage: showingVideos
           ? l10n.videoStatusesWillAppearHere
           : l10n.imageStatusesWillAppearHere,
@@ -1401,21 +1162,10 @@ class _StatusHomePageState extends State<StatusHomePage> {
   // ==========================================================================
 
   Widget _buildSavedTab(String filter) {
-    final l10n = AppLocalizations.of(context)!;
-    final showingVideos = filter == 'videos';
-
-    return _buildMediaGrid(
-      items: _filterMedia(_savedStatuses, filter),
-      loading: _loadingSaved,
-      onRefresh: _loadSavedStatuses,
-      emptyTitle: showingVideos
-          ? l10n.noSavedVideos
-          : l10n.noSavedImages,
-      emptyMessage: showingVideos
-          ? l10n.videosYouSaveWillAppearHere
-          : l10n.imagesYouSaveWillAppearHere,
-      showDownloadButton: false,
-      isSavedItem: true,
+    return SavedLibraryPage(
+      key: ValueKey('saved_$filter'),
+      filter: filter,
+      onMediaChanged: _loadSavedStatuses,
     );
   }
 
@@ -1432,29 +1182,21 @@ class _StatusHomePageState extends State<StatusHomePage> {
         return AlertDialog(
           title: Text(
             l10n.exitStatusly,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
-          content: Text(
-            l10n.areYouSureYouWantToCloseTheApp,
-          ),
+          content: Text(l10n.areYouSureYouWantToCloseTheApp),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(false);
               },
-              child: Text(
-                l10n.cancel,
-              ),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
-              child: Text(
-                l10n.exit,
-              ),
+              child: Text(l10n.exit),
             ),
           ],
         );
@@ -1472,21 +1214,19 @@ class _StatusHomePageState extends State<StatusHomePage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final showingStatuses =
-        _currentTab == 0;
+    final showingStatuses = _currentTab == 0;
 
-    final showingSaved =
-        _currentTab == 1;
+    final showingSaved = _currentTab == 1;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) {
-          return;
-        }
+        if (didPop) return;
 
-        final shouldExit =
-        await _confirmExit();
+        // Back first closes selection rather than exiting the app.
+        if (SavedLibraryPage.dismissSelection()) return;
+
+        final shouldExit = await _confirmExit();
 
         if (shouldExit) {
           SystemNavigator.pop();
@@ -1496,7 +1236,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
         // ======================================================================
         // APP BAR
         // ======================================================================
-
         appBar: AppBar(
           title: Text(
             showingStatuses
@@ -1504,9 +1243,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
                 : showingSaved
                 ? l10n.saved
                 : l10n.settings,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           actions: [
             if (showingStatuses) ...[
@@ -1518,65 +1255,48 @@ class _StatusHomePageState extends State<StatusHomePage> {
             IconButton(
               tooltip: l10n.openWhatsAppTooltip,
               onPressed: _openWhatsApp,
-              icon: const Icon(
-                Icons.mark_chat_unread,
-              ),
+              icon: const Icon(Icons.mark_chat_unread),
             ),
 
-            const SizedBox(
-              width: 4,
-            ),
+            const SizedBox(width: 4),
           ],
         ),
 
         // ======================================================================
         // BODY
         // ======================================================================
-
         body: Column(
           children: [
-            // Fixed Photos / Videos tabs.
-            // Hidden on Settings and while Statuses needs setup.
-            if (
-            _currentTab == 1 ||
-                (
-                    _currentTab == 0 &&
-                        !_loadingAppState &&
-                        _selectedSource != null &&
-                        _isConfigured(_selectedSource!)
-                )
-            ) ...[
+            if (_currentTab == 1)
+              SavedFilterBar(
+                selected: _savedFilter == 'folders'
+                    ? 2
+                    : _savedFilter == 'videos'
+                    ? 1
+                    : 0,
+                imagesCount: _filterMedia(_savedStatuses, 'images').length,
+                videosCount: _filterMedia(_savedStatuses, 'videos').length,
+                onChanged: (index) {
+                  _goToPage(index + 2);
+                },
+              )
+            else if (_currentTab == 0 &&
+                !_loadingAppState &&
+                _selectedSource != null &&
+                _isConfigured(_selectedSource!)) ...[
               const SizedBox(height: 8),
 
               MediaFilterBar(
-                selectedFilter: _currentTab == 0
-                    ? _statusFilter
-                    : _savedFilter,
+                selectedFilter: _statusFilter,
                 onChanged: (value) {
-                  final showingVideos = value == 'videos';
-
-                  if (_currentTab == 0) {
-                    _goToPage(showingVideos ? 1 : 0);
-                  } else {
-                    _goToPage(showingVideos ? 3 : 2);
-                  }
+                  _goToPage(value == 'videos' ? 1 : 0);
                 },
-                imagesCount: _currentTab == 0
-                    ? _filterMedia(
+                imagesCount: _filterMedia(
                   _statuses.where(_isStatusNew).toList(),
-                  'images',
-                ).length
-                    : _filterMedia(
-                  _savedStatuses,
                   'images',
                 ).length,
-                videosCount: _currentTab == 0
-                    ? _filterMedia(
+                videosCount: _filterMedia(
                   _statuses.where(_isStatusNew).toList(),
-                  'videos',
-                ).length
-                    : _filterMedia(
-                  _savedStatuses,
                   'videos',
                 ).length,
               ),
@@ -1584,7 +1304,6 @@ class _StatusHomePageState extends State<StatusHomePage> {
               const SizedBox(height: 4),
             ],
 
-            // Only the content below the tabs moves horizontally.
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -1596,6 +1315,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
 
                   _buildSavedTab('images'),
                   _buildSavedTab('videos'),
+                  _buildSavedTab('folders'),
 
                   SettingsScreen(
                     statusService: _statusService,
@@ -1616,40 +1336,25 @@ class _StatusHomePageState extends State<StatusHomePage> {
         // ======================================================================
         // BOTTOM NAVIGATION
         // ======================================================================
-
-        bottomNavigationBar:
-        NavigationBar(
+        bottomNavigationBar: NavigationBar(
           selectedIndex: _currentTab,
-          onDestinationSelected:
-          _changeTab,
+          onDestinationSelected: _changeTab,
           destinations: [
             NavigationDestination(
               icon: const StatusIcon(),
-              selectedIcon: const StatusIcon(
-                selected: true,
-              ),
+              selectedIcon: const StatusIcon(selected: true),
               label: l10n.statuses,
             ),
 
             NavigationDestination(
-              icon: const Icon(
-                Icons.download_outlined,
-                size: 37,
-              ),
-              selectedIcon: const Icon(
-                Icons.download,
-                size: 37,
-              ),
+              icon: const Icon(Icons.download_outlined, size: 37),
+              selectedIcon: const Icon(Icons.download, size: 37),
               label: l10n.saved,
             ),
 
             NavigationDestination(
-              icon: const Icon(
-                Icons.settings_outlined,
-              ),
-              selectedIcon: const Icon(
-                Icons.settings,
-              ),
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
               label: l10n.settings,
             ),
           ],

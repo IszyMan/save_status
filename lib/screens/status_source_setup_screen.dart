@@ -167,15 +167,6 @@ class _StatusSourceSetupScreenState
         scrolledUnderElevation: 0,
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.primaryDark,
-        title: Text(
-          l10n.setUpStatusAccess,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-          ),
-        ),
       ),
       body: _loading
           ? const Center(
@@ -238,7 +229,7 @@ class _StatusSourceSetupScreenState
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
-                      Icons.download_rounded,
+                      Icons.folder_open_rounded,
                       size: 28,
                       color: AppColors.primaryDark,
                     ),
@@ -248,7 +239,7 @@ class _StatusSourceSetupScreenState
                 const SizedBox(height: 16),
 
                 Text(
-                  l10n.saveStatus,
+                  l10n.setUpStatusAccess,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 27,

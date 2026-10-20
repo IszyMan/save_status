@@ -973,5 +973,134 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get setupFolderInstructions =>
-      '**Nur noch ein Schritt!** Wähle unten deine App. Sobald die Anleitung geschlossen ist, tippe auf **Diesen Ordner verwenden** und dann auf **Zulassen**, um deine Statusmeldungen anzuzeigen.';
+      '**Schritte zum Einrichten des Statuszugriffs**\n\n• Wähle unten deine App aus\n• Tippe auf **Diesen Ordner verwenden**\n• Tippe anschließend auf **Zulassen**, um Statusmeldungen anzuzeigen.';
+
+  @override
+  String get folderTab => 'Ordner';
+
+  @override
+  String get folderNew => 'Neuer Ordner';
+
+  @override
+  String get folderRename => 'Ordner umbenennen';
+
+  @override
+  String get folderName => 'Ordnername';
+
+  @override
+  String get folderCreate => 'Erstellen';
+
+  @override
+  String get folderDuplicateName =>
+      'Ein Ordner mit diesem Namen ist bereits vorhanden.';
+
+  @override
+  String get folderNameInvalid => 'Gib einen Namen mit 1 bis 40 Zeichen ein.';
+
+  @override
+  String get folderOperationFailed =>
+      'Die Ordner konnten nicht aktualisiert werden. Versuche es erneut.';
+
+  @override
+  String get folderMoveTo => 'In einen Ordner verschieben';
+
+  @override
+  String get folderNoFolder => 'Ohne Ordner';
+
+  @override
+  String get folderKeepInAll => 'Ohne Ordner unter Fotos und Videos behalten';
+
+  @override
+  String folderItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Elemente',
+      one: '1 Element',
+      zero: 'Keine Elemente',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderOptions => 'Optionen';
+
+  @override
+  String get folderSelect => 'Auswählen';
+
+  @override
+  String get folderDelete => 'Ordner löschen';
+
+  @override
+  String folderDeleteTitle(String name) {
+    return '„$name“ löschen?';
+  }
+
+  @override
+  String get folderDeleteExplanation =>
+      'Deine Fotos und Videos bleiben unter Fotos und Videos erhalten. Nur dieser Ordner wird gelöscht.';
+
+  @override
+  String get folderItemsMoved => 'Ordner aktualisiert.';
+
+  @override
+  String get folderEmptyList =>
+      'Erstelle deinen ersten Ordner, um deine gespeicherten Fotos und Videos zu organisieren.';
+
+  @override
+  String folderSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Elemente ausgewählt',
+      one: '1 Element ausgewählt',
+      zero: 'Keine Elemente ausgewählt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderSelectAll => 'Alle auswählen';
+
+  @override
+  String get folderMove => 'Verschieben';
+
+  @override
+  String get folderNoItems => 'Hier sind noch keine Elemente gespeichert';
+
+  @override
+  String get folderAddHint =>
+      'Wähle unter Gespeichert Fotos oder Videos aus und tippe auf In einen Ordner verschieben.';
+
+  @override
+  String get folderSaveHint =>
+      'Gespeicherte Statusmeldungen werden hier angezeigt.';
+
+  @override
+  String get folderRetry => 'Erneut versuchen';
+
+  @override
+  String get folderLoadFailed =>
+      'Gespeicherte Medien oder Ordner konnten nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get folderOpenFailed =>
+      'Dieses gespeicherte Element konnte nicht geöffnet werden. Aktualisiere die Ansicht und versuche es erneut.';
+
+  @override
+  String get folderStatusSaved => 'Status gespeichert';
+
+  @override
+  String get folderAddTo => 'Zu einem Ordner hinzufügen';
+
+  @override
+  String folderMovedSuccess(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Statusmeldungen erfolgreich nach „$name“ verschoben.',
+      one: 'Status erfolgreich nach „$name“ verschoben.',
+    );
+    return '$_temp0';
+  }
 }

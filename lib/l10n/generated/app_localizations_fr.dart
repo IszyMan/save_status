@@ -115,7 +115,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statusAccessIsReady => 'L\'accès aux statuts est prêt';
 
   @override
-  String get setUpStatusAccess => 'Configurer l\'accès aux statuts';
+  String get setUpStatusAccess => 'Configurer l’accès aux statuts';
 
   @override
   String get whatsappNotFound => 'WhatsApp introuvable';
@@ -976,5 +976,133 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get setupFolderInstructions =>
-      '**Une dernière étape !** Choisissez votre application ci-dessous. Lorsque le guide se ferme, appuyez sur **Utiliser ce dossier**, puis sur **Autoriser** pour afficher vos statuts.';
+      '**Étapes pour configurer l’accès aux statuts**\n\n• Choisissez votre application ci-dessous\n• Appuyez sur **Utiliser ce dossier**\n• Puis appuyez sur **Autoriser** pour afficher les statuts.';
+
+  @override
+  String get folderTab => 'Dossiers';
+
+  @override
+  String get folderNew => 'Nouveau dossier';
+
+  @override
+  String get folderRename => 'Renommer le dossier';
+
+  @override
+  String get folderName => 'Nom du dossier';
+
+  @override
+  String get folderCreate => 'Créer';
+
+  @override
+  String get folderDuplicateName => 'Un dossier portant ce nom existe déjà.';
+
+  @override
+  String get folderNameInvalid => 'Saisissez un nom de 1 à 40 caractères.';
+
+  @override
+  String get folderOperationFailed =>
+      'Impossible de mettre à jour les dossiers. Réessayez.';
+
+  @override
+  String get folderMoveTo => 'Déplacer vers un dossier';
+
+  @override
+  String get folderNoFolder => 'Sans dossier';
+
+  @override
+  String get folderKeepInAll => 'Conserver dans Photos et Vidéos sans dossier';
+
+  @override
+  String folderItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count éléments',
+      one: '1 élément',
+      zero: 'Aucun élément',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderOptions => 'Options';
+
+  @override
+  String get folderSelect => 'Sélectionner';
+
+  @override
+  String get folderDelete => 'Supprimer le dossier';
+
+  @override
+  String folderDeleteTitle(String name) {
+    return 'Supprimer « $name » ?';
+  }
+
+  @override
+  String get folderDeleteExplanation =>
+      'Vos photos et vidéos resteront dans Photos et Vidéos. Seul ce dossier sera supprimé.';
+
+  @override
+  String get folderItemsMoved => 'Dossier mis à jour.';
+
+  @override
+  String get folderEmptyList =>
+      'Créez votre premier dossier pour organiser vos photos et vidéos enregistrées.';
+
+  @override
+  String folderSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count éléments sélectionnés',
+      one: '1 élément sélectionné',
+      zero: 'Aucun élément sélectionné',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderSelectAll => 'Tout sélectionner';
+
+  @override
+  String get folderMove => 'Déplacer';
+
+  @override
+  String get folderNoItems => 'Aucun élément enregistré ici pour le moment';
+
+  @override
+  String get folderAddHint =>
+      'Dans Enregistrés, sélectionnez des photos ou vidéos, puis choisissez Déplacer vers un dossier.';
+
+  @override
+  String get folderSaveHint =>
+      'Les statuts que vous enregistrez apparaîtront ici.';
+
+  @override
+  String get folderRetry => 'Réessayer';
+
+  @override
+  String get folderLoadFailed =>
+      'Impossible de charger les médias enregistrés ou les dossiers. Réessayez.';
+
+  @override
+  String get folderOpenFailed =>
+      'Impossible d’ouvrir cet élément enregistré. Actualisez et réessayez.';
+
+  @override
+  String get folderStatusSaved => 'Statut enregistré';
+
+  @override
+  String get folderAddTo => 'Ajouter à un dossier';
+
+  @override
+  String folderMovedSuccess(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count statuts déplacés vers « $name » avec succès.',
+      one: 'Statut déplacé vers « $name » avec succès.',
+    );
+    return '$_temp0';
+  }
 }

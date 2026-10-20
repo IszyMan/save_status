@@ -364,5 +364,57 @@
         "repost": "Erneut posten",
         "save": "Speichern",
         "delete": "Löschen",
-        "setupFolderInstructions": "**Nur noch ein Schritt!** Wähle unten deine App. Sobald die Anleitung geschlossen ist, tippe auf **Diesen Ordner verwenden** und dann auf **Zulassen**, um deine Statusmeldungen anzuzeigen."
+        "setupFolderInstructions": "**Schritte zum Einrichten des Statuszugriffs**\n\n• Wähle unten deine App aus\n• Tippe auf **Diesen Ordner verwenden**\n• Tippe anschließend auf **Zulassen**, um Statusmeldungen anzuzeigen.",
+        "folderTab": "Ordner",
+        "folderNew": "Neuer Ordner",
+        "folderRename": "Ordner umbenennen",
+        "folderName": "Ordnername",
+        "folderCreate": "Erstellen",
+        "folderDuplicateName": "Ein Ordner mit diesem Namen ist bereits vorhanden.",
+        "folderNameInvalid": "Gib einen Namen mit 1 bis 40 Zeichen ein.",
+        "folderOperationFailed": "Die Ordner konnten nicht aktualisiert werden. Versuche es erneut.",
+        "folderMoveTo": "In einen Ordner verschieben",
+        "folderNoFolder": "Ohne Ordner",
+        "folderKeepInAll": "Ohne Ordner unter Fotos und Videos behalten",
+        "folderItemCount": "{count, plural, =0{Keine Elemente} =1{1 Element} other{{count} Elemente}}",
+        "@folderItemCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderOptions": "Optionen",
+        "folderSelect": "Auswählen",
+        "folderDelete": "Ordner löschen",
+        "folderDeleteTitle": "„{name}“ löschen?",
+        "@folderDeleteTitle": {
+          "placeholders": {
+            "name": {
+              "type": "String"
+            }
+          }
+        },
+        "folderDeleteExplanation": "Deine Fotos und Videos bleiben unter Fotos und Videos erhalten. Nur dieser Ordner wird gelöscht.",
+        "folderItemsMoved": "Ordner aktualisiert.",
+        "folderEmptyList": "Erstelle deinen ersten Ordner, um deine gespeicherten Fotos und Videos zu organisieren.",
+        "folderSelectedCount": "{count, plural, =0{Keine Elemente ausgewählt} =1{1 Element ausgewählt} other{{count} Elemente ausgewählt}}",
+        "@folderSelectedCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderSelectAll": "Alle auswählen",
+        "folderMove": "Verschieben",
+        "folderNoItems": "Hier sind noch keine Elemente gespeichert",
+        "folderAddHint": "Wähle unter Gespeichert Fotos oder Videos aus und tippe auf In einen Ordner verschieben.",
+        "folderSaveHint": "Gespeicherte Statusmeldungen werden hier angezeigt.",
+        "folderRetry": "Erneut versuchen",
+        "folderLoadFailed": "Gespeicherte Medien oder Ordner konnten nicht geladen werden. Versuche es erneut.",
+        "folderOpenFailed": "Dieses gespeicherte Element konnte nicht geöffnet werden. Aktualisiere die Ansicht und versuche es erneut.",
+        "folderStatusSaved": "Status gespeichert",
+        "folderAddTo": "Zu einem Ordner hinzufügen",
+        "folderMovedSuccess": "{count, plural, =1{Status erfolgreich nach „{name}“ verschoben.} other{{count} Statusmeldungen erfolgreich nach „{name}“ verschoben.}}"
 }

@@ -32,7 +32,7 @@
     "saveStatus": "Save Status",
     "savePhotosAndVideosFromWhatsAppStatuses": "Save photos and videos from your WhatsApp statuses.",
     "statusAccessIsReady": "Status access is ready",
-    "setUpStatusAccess": "Set up status access",
+    "setUpStatusAccess": "Set Up Status Access",
     "whatsappNotFound": "WhatsApp not found",
     "installWhatsAppOrBusinessToUseStatusly": "Install WhatsApp or WhatsApp Business to use Statusly.",
     "noVideosFound": "No videos found",
@@ -366,7 +366,69 @@
         "repost": "Repost",
         "save": "Save",
         "delete": "Delete",
-        "setupFolderInstructions": "**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses."
+        "setupFolderInstructions": "**Steps to Set Up Status Access**\n\n• Choose your app below\n• Next click **Use this folder**\n• Then tap **Allow** to view statuses.",
+        "folderTab": "Folders",
+        "folderNew": "New folder",
+        "folderRename": "Rename folder",
+        "folderName": "Folder name",
+        "folderCreate": "Create",
+        "folderDuplicateName": "A folder with this name already exists.",
+        "folderNameInvalid": "Enter a name between 1 and 40 characters.",
+        "folderOperationFailed": "Could not update folders. Please try again.",
+        "folderMoveTo": "Move to folder",
+        "folderNoFolder": "No folder",
+        "folderKeepInAll": "Keep in Photos and Videos without a folder",
+        "folderItemCount": "{count, plural, =0{No items} =1{1 item} other{{count} items}}",
+        "@folderItemCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderOptions": "Options",
+        "folderSelect": "Select",
+        "folderDelete": "Delete folder",
+        "folderDeleteTitle": "Delete “{name}”?",
+        "@folderDeleteTitle": {
+          "placeholders": {
+            "name": {
+              "type": "String"
+            }
+          }
+        },
+        "folderDeleteExplanation": "Your photos and videos will stay in Photos and Videos. Only this folder will be removed.",
+        "folderItemsMoved": "Folder updated.",
+        "folderEmptyList": "Create your first folder to organize saved photos and videos.",
+        "folderSelectedCount": "{count} selected",
+        "@folderSelectedCount": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            }
+          }
+        },
+        "folderSelectAll": "Select all",
+        "folderMove": "Move",
+        "folderNoItems": "No saved items here yet",
+        "folderAddHint": "In Saved, select photos or videos and choose Move to folder.",
+        "folderSaveHint": "Statuses you save will appear here.",
+        "folderRetry": "Try again",
+        "folderLoadFailed": "Could not load saved media or folders. Please try again.",
+        "folderOpenFailed": "Could not open this saved item. Refresh and try again.",
+        "folderStatusSaved": "Status saved",
+        "folderAddTo": "Add to folder",
+        "folderMovedSuccess": "{count, plural, =1{Status moved to “{name}” successfully.} other{{count} statuses moved to “{name}” successfully.}}",
+        "@folderMovedSuccess": {
+          "placeholders": {
+            "count": {
+              "type": "int"
+            },
+            "name": {
+              "type": "String"
+            }
+          }
+        }
 
 
 

@@ -112,7 +112,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusAccessIsReady => 'Status access is ready';
 
   @override
-  String get setUpStatusAccess => 'Set up status access';
+  String get setUpStatusAccess => 'Set Up Status Access';
 
   @override
   String get whatsappNotFound => 'WhatsApp not found';
@@ -965,5 +965,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupFolderInstructions =>
-      '**One quick step!** Choose your app below. When the guide closes, tap **Use this folder**, then **Allow** to show your statuses.';
+      '**Steps to Set Up Status Access**\n\n• Choose your app below\n• Next click **Use this folder**\n• Then tap **Allow** to view statuses.';
+
+  @override
+  String get folderTab => 'Folders';
+
+  @override
+  String get folderNew => 'New folder';
+
+  @override
+  String get folderRename => 'Rename folder';
+
+  @override
+  String get folderName => 'Folder name';
+
+  @override
+  String get folderCreate => 'Create';
+
+  @override
+  String get folderDuplicateName => 'A folder with this name already exists.';
+
+  @override
+  String get folderNameInvalid => 'Enter a name between 1 and 40 characters.';
+
+  @override
+  String get folderOperationFailed =>
+      'Could not update folders. Please try again.';
+
+  @override
+  String get folderMoveTo => 'Move to folder';
+
+  @override
+  String get folderNoFolder => 'No folder';
+
+  @override
+  String get folderKeepInAll => 'Keep in Photos and Videos without a folder';
+
+  @override
+  String folderItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderOptions => 'Options';
+
+  @override
+  String get folderSelect => 'Select';
+
+  @override
+  String get folderDelete => 'Delete folder';
+
+  @override
+  String folderDeleteTitle(String name) {
+    return 'Delete “$name”?';
+  }
+
+  @override
+  String get folderDeleteExplanation =>
+      'Your photos and videos will stay in Photos and Videos. Only this folder will be removed.';
+
+  @override
+  String get folderItemsMoved => 'Folder updated.';
+
+  @override
+  String get folderEmptyList =>
+      'Create your first folder to organize saved photos and videos.';
+
+  @override
+  String folderSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get folderSelectAll => 'Select all';
+
+  @override
+  String get folderMove => 'Move';
+
+  @override
+  String get folderNoItems => 'No saved items here yet';
+
+  @override
+  String get folderAddHint =>
+      'In Saved, select photos or videos and choose Move to folder.';
+
+  @override
+  String get folderSaveHint => 'Statuses you save will appear here.';
+
+  @override
+  String get folderRetry => 'Try again';
+
+  @override
+  String get folderLoadFailed =>
+      'Could not load saved media or folders. Please try again.';
+
+  @override
+  String get folderOpenFailed =>
+      'Could not open this saved item. Refresh and try again.';
+
+  @override
+  String get folderStatusSaved => 'Status saved';
+
+  @override
+  String get folderAddTo => 'Add to folder';
+
+  @override
+  String folderMovedSuccess(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count statuses moved to “$name” successfully.',
+      one: 'Status moved to “$name” successfully.',
+    );
+    return '$_temp0';
+  }
 }

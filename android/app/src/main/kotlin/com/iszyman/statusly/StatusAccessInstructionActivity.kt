@@ -36,7 +36,7 @@ class StatusAccessInstructionActivity : Activity() {
         // Android's actual folder picker remains open underneath.
         dismissHandler.postDelayed(
             dismissInstruction,
-            4000L
+            8000L
         )
     }
 

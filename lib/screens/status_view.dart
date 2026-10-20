@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../l10n/generated/app_localizations.dart';
+import '../widgets/saved_folder_picker.dart';
 
 class StatusView extends StatefulWidget {
   final String filePath;
@@ -31,6 +32,8 @@ class _StatusViewState extends State<StatusView> {
     'com.iszyman.statusly/status',
   );
 
+  final GlobalKey<ScaffoldMessengerState> _viewerMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
   VideoPlayerController? _videoController;
 
   bool _initializing = true;
@@ -39,8 +42,6 @@ class _StatusViewState extends State<StatusView> {
   bool _reposting = false;
 
   bool _deleting = false;
-
-
 
   String? _error;
 
@@ -60,23 +61,18 @@ class _StatusViewState extends State<StatusView> {
   // ==========================================================================
 
   Future<void> _saveStatus() async {
-    if (_saving) {
-      return;
-    }
+    if (_saving) return;
 
     setState(() {
       _saving = true;
     });
 
     try {
-      final result = await _channel.invokeMethod(
-        'saveStatus',
-        {
-          'uri': widget.status['uri'],
-          'name': widget.status['name'],
-          'mimeType': widget.status['mimeType'],
-        },
-      );
+      final result = await _channel.invokeMethod('saveStatus', {
+        'uri': widget.status['uri'],
+        'name': widget.status['name'],
+        'mimeType': widget.status['mimeType'],
+      });
 
       if (!mounted) return;
 
@@ -88,45 +84,56 @@ class _StatusViewState extends State<StatusView> {
 
       final alreadySaved = data['alreadySaved'] == true;
 
-      // The status is considered downloaded if Android reports
-      // that it was saved now OR that it was already saved.
+      // Android returns the URI of the saved gallery copy.
+      final savedUri = data['uri']?.toString();
+
       widget.onSaved?.call();
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = _viewerMessengerKey.currentState;
+      if (messenger == null) return;
+
+      messenger.hideCurrentSnackBar();
+
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
-            alreadySaved
-                ? l10n.alreadySavedToGallery
-                : l10n.savedToGallery,
+            alreadySaved ? l10n.alreadySavedToGallery : l10n.folderStatusSaved,
           ),
+          duration: const Duration(seconds: 6),
           behavior: SnackBarBehavior.floating,
+          action: savedUri == null || savedUri.isEmpty
+              ? null
+              : SnackBarAction(
+                  label: l10n.folderAddTo,
+                  onPressed: () async {
+                    await _videoController?.pause();
+
+                    if (!mounted) return;
+
+                    await organizeSavedStatus(context, savedUri);
+                  },
+                ),
         ),
       );
-    } on PlatformException catch (e) {
+    } on PlatformException catch (error) {
       if (!mounted) return;
 
       final l10n = AppLocalizations.of(context)!;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            e.message ?? l10n.unableToSaveStatus,
-          ),
+          content: Text(error.message ?? l10n.unableToSaveStatus),
           behavior: SnackBarBehavior.floating,
         ),
       );
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
 
       final l10n = AppLocalizations.of(context)!;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.unableToSaveStatusWithError(
-              e.toString(),
-            ),
-          ),
+          content: Text(l10n.unableToSaveStatusWithError(error.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -139,7 +146,6 @@ class _StatusViewState extends State<StatusView> {
     }
   }
 
-
   Future<void> _repostStatus() async {
     if (_reposting || _sharing || _saving) return;
 
@@ -150,13 +156,10 @@ class _StatusViewState extends State<StatusView> {
     try {
       await _videoController?.pause();
 
-      await _channel.invokeMethod(
-        'repostStatus',
-        {
-          'uri': widget.status['uri'],
-          'mimeType': widget.status['mimeType'],
-        },
-      );
+      await _channel.invokeMethod('repostStatus', {
+        'uri': widget.status['uri'],
+        'mimeType': widget.status['mimeType'],
+      });
     } catch (e) {
       if (!mounted) return;
 
@@ -165,10 +168,7 @@ class _StatusViewState extends State<StatusView> {
           : 'Unable to repost this status. Please try again.';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) {
@@ -193,15 +193,12 @@ class _StatusViewState extends State<StatusView> {
     });
 
     try {
-      await _channel.invokeMethod(
-        'shareStatus',
-        {
-          'uri': widget.status['uri'],
-          'name': widget.status['name'],
-          'mimeType': widget.status['mimeType'],
-          'filePath': widget.filePath,
-        },
-      );
+      await _channel.invokeMethod('shareStatus', {
+        'uri': widget.status['uri'],
+        'name': widget.status['name'],
+        'mimeType': widget.status['mimeType'],
+        'filePath': widget.filePath,
+      });
     } on PlatformException catch (e) {
       if (!mounted) return;
 
@@ -209,9 +206,7 @@ class _StatusViewState extends State<StatusView> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            e.message ?? l10n.unableToShareStatus,
-          ),
+          content: Text(e.message ?? l10n.unableToShareStatus),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -222,11 +217,7 @@ class _StatusViewState extends State<StatusView> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.unableToShareStatusWithError(
-              e.toString(),
-            ),
-          ),
+          content: Text(l10n.unableToShareStatusWithError(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -239,13 +230,8 @@ class _StatusViewState extends State<StatusView> {
     }
   }
 
-
   Future<void> _deleteStatus() async {
-    if (!widget.isSavedItem ||
-        _deleting ||
-        _saving ||
-        _sharing ||
-        _reposting) {
+    if (!widget.isSavedItem || _deleting || _saving || _sharing || _reposting) {
       return;
     }
 
@@ -256,8 +242,8 @@ class _StatusViewState extends State<StatusView> {
           title: const Text('Delete saved item?'),
           content: Text(
             'This will permanently remove this '
-                '${widget.isVideo ? 'video' : 'photo'} '
-                'from Saved and your phone’s gallery.',
+            '${widget.isVideo ? 'video' : 'photo'} '
+            'from Saved and your phone’s gallery.',
           ),
           actions: [
             TextButton(
@@ -270,9 +256,7 @@ class _StatusViewState extends State<StatusView> {
               onPressed: () {
                 Navigator.of(dialogContext).pop(true);
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],
@@ -289,12 +273,9 @@ class _StatusViewState extends State<StatusView> {
     try {
       await _videoController?.pause();
 
-      final deleted = await _channel.invokeMethod<bool>(
-        'deleteSavedStatus',
-        {
-          'uri': widget.status['uri'],
-        },
-      );
+      final deleted = await _channel.invokeMethod<bool>('deleteSavedStatus', {
+        'uri': widget.status['uri'],
+      });
 
       if (!mounted) return;
 
@@ -309,10 +290,7 @@ class _StatusViewState extends State<StatusView> {
           : 'Unable to delete this item. Please try again.';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) {
@@ -404,30 +382,41 @@ class _StatusViewState extends State<StatusView> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(
-          widget.isVideo ? 'Video' : 'Photo',
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: _buildContent(),
-              ),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _viewerMessengerKey.currentState
+              ?.removeCurrentSnackBar();
+        }
+      },
+      child: ScaffoldMessenger(
+        key: _viewerMessengerKey,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            title: Text(
+              widget.isVideo ? 'Video' : 'Photo',
             ),
-            if (!_initializing && _error == null)
-              _buildActionBar(
-                context,
-                colorScheme,
-                l10n,
-              ),
-          ],
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: _buildContent(),
+                  ),
+                ),
+                if (!_initializing && _error == null)
+                  _buildActionBar(
+                    context,
+                    colorScheme,
+                    l10n,
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -438,22 +427,16 @@ class _StatusViewState extends State<StatusView> {
   // ==========================================================================
 
   Widget _buildActionBar(
-      BuildContext context,
-      ColorScheme colorScheme,
-      AppLocalizations l10n,
-      ) {
-    final busy =
-        _reposting || _sharing || _saving || _deleting;
+    BuildContext context,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    final busy = _reposting || _sharing || _saving || _deleting;
 
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.fromLTRB(
-        12,
-        16,
-        12,
-        36,
-      ),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 36),
       child: Row(
         children: [
           Expanded(
@@ -506,13 +489,8 @@ class _StatusViewState extends State<StatusView> {
         disabledForegroundColor: Colors.white38,
         backgroundColor: Colors.transparent,
         minimumSize: const Size(0, 72),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 6,
-          vertical: 10,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -522,16 +500,13 @@ class _StatusViewState extends State<StatusView> {
             height: 28,
             child: loading
                 ? const Padding(
-              padding: EdgeInsets.all(2),
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : Icon(
-              icon,
-              size: 28,
-            ),
+                    padding: EdgeInsets.all(2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Icon(icon, size: 28),
           ),
 
           const SizedBox(height: 8),
@@ -557,16 +532,13 @@ class _StatusViewState extends State<StatusView> {
     );
   }
 
-
   // ==========================================================================
   // MEDIA CONTENT
   // ==========================================================================
 
   Widget _buildContent() {
     if (_initializing) {
-      return const CircularProgressIndicator(
-        color: Colors.white,
-      );
+      return const CircularProgressIndicator(color: Colors.white);
     }
 
     if (_error != null) {
@@ -575,20 +547,12 @@ class _StatusViewState extends State<StatusView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: Colors.white70,
-              size: 48,
-            ),
-            const SizedBox(
-              height: 16,
-            ),
+            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+            const SizedBox(height: 16),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
+              style: const TextStyle(color: Colors.white),
             ),
           ],
         ),
@@ -603,9 +567,7 @@ class _StatusViewState extends State<StatusView> {
 
         return Text(
           l10n.unableToPlayVideo,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+          style: const TextStyle(color: Colors.white),
         );
       }
 
@@ -622,10 +584,7 @@ class _StatusViewState extends State<StatusView> {
           }
         },
         child: LayoutBuilder(
-          builder: (
-              context,
-              constraints,
-              ) {
+          builder: (context, constraints) {
             final width = controller.value.size.width;
             final height = controller.value.size.height;
 
@@ -636,9 +595,7 @@ class _StatusViewState extends State<StatusView> {
             return Center(
               child: AspectRatio(
                 aspectRatio: width / height,
-                child: VideoPlayer(
-                  controller,
-                ),
+                child: VideoPlayer(controller),
               ),
             );
           },
@@ -649,10 +606,7 @@ class _StatusViewState extends State<StatusView> {
     return InteractiveViewer(
       minScale: 0.8,
       maxScale: 4.0,
-      child: Image.file(
-        File(widget.filePath),
-        fit: BoxFit.contain,
-      ),
+      child: Image.file(File(widget.filePath), fit: BoxFit.contain),
     );
   }
 }
