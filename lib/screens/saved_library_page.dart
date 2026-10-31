@@ -246,6 +246,7 @@ class _SavedLibraryPageState extends State<SavedLibraryPage>
             status: item,
             isVideo: _isVideo(item),
             isSavedItem: true,
+            source: 'whatsapp',
           ),
         ),
       );

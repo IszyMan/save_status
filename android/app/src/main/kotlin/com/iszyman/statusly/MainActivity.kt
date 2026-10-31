@@ -13,6 +13,9 @@ import android.os.Looper
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.provider.Settings
+import java.security.MessageDigest
+import android.provider.OpenableColumns
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -79,8 +82,8 @@ class MainActivity : FlutterActivity() {
 
 
                 // =====================================================
-// SET APP LANGUAGE
-// =====================================================
+                // SET APP LANGUAGE
+                // =====================================================
 
                 "setAppLanguage" -> {
 
@@ -201,6 +204,34 @@ class MainActivity : FlutterActivity() {
                         )
                     )
                 }
+
+
+
+                // =====================================================
+                // GET REWARDS DEVICE ID
+                // =====================================================
+
+                "getRewardsAndroidId" -> {
+                    val androidId = Settings.Secure.getString(
+                        contentResolver,
+                        Settings.Secure.ANDROID_ID
+                    )
+
+                    if (
+                        androidId.isNullOrBlank() ||
+                        !androidId.matches(Regex("^[a-fA-F0-9]{16}$")) ||
+                        androidId.all { it == '0' }
+                    ) {
+                        result.error(
+                            "DEVICE_ID_UNAVAILABLE",
+                            "A valid Android device ID is unavailable.",
+                            null
+                        )
+                    } else {
+                        result.success(androidId.lowercase())
+                    }
+                }
+
 
 
                 // =====================================================
@@ -1767,6 +1798,44 @@ class MainActivity : FlutterActivity() {
     }
 
     // =============================================================
+    // CALCULATE SHA-256 HASH AND FILE SIZE
+    // =============================================================
+
+    private fun calculateMediaMetadata(
+        uri: Uri
+    ): Pair<String, Long> {
+
+        val digest = MessageDigest.getInstance("SHA-256")
+        var sizeBytes = 0L
+
+        val inputStream = contentResolver.openInputStream(uri)
+            ?: throw Exception("Unable to read media for reward tracking")
+
+        inputStream.use { input ->
+            val buffer = ByteArray(8192)
+
+            while (true) {
+                val bytesRead = input.read(buffer)
+
+                if (bytesRead == -1) break
+
+                digest.update(buffer, 0, bytesRead)
+                sizeBytes += bytesRead
+            }
+        }
+
+        if (sizeBytes <= 0L) {
+            throw Exception("Media file is empty")
+        }
+
+        val contentHash = digest.digest().joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xff)
+        }
+
+        return Pair(contentHash, sizeBytes)
+    }
+
+    // =============================================================
     // SAVE STATUS TO GALLERY
     // =============================================================
 
@@ -1857,17 +1926,22 @@ class MainActivity : FlutterActivity() {
                     relativePath
                 )
 
+
             if (duplicate != null) {
+
+                val (contentHash, sizeBytes) =
+                    calculateMediaMetadata(duplicate)
 
                 return mapOf(
                     "success" to true,
                     "alreadySaved" to true,
-                    "uri" to
-                            duplicate.toString(),
-                    "name" to
-                            fileName
+                    "uri" to duplicate.toString(),
+                    "name" to fileName,
+                    "contentHash" to contentHash,
+                    "sizeBytes" to sizeBytes
                 )
             }
+
 
             // -----------------------------------------------------
             // CREATE MEDIASTORE ENTRY
@@ -1957,13 +2031,16 @@ class MainActivity : FlutterActivity() {
                     null
                 )
 
+                val (contentHash, sizeBytes) =
+                    calculateMediaMetadata(destinationUri)
+
                 return mapOf(
                     "success" to true,
                     "alreadySaved" to false,
-                    "uri" to
-                            destinationUri.toString(),
-                    "name" to
-                            fileName
+                    "uri" to destinationUri.toString(),
+                    "name" to fileName,
+                    "contentHash" to contentHash,
+                    "sizeBytes" to sizeBytes
                 )
 
             } catch (e: Exception) {
@@ -2052,13 +2129,16 @@ class MainActivity : FlutterActivity() {
                     )
             }
 
+            val (contentHash, sizeBytes) =
+                calculateMediaMetadata(destinationUri)
+
             return mapOf(
                 "success" to true,
                 "alreadySaved" to false,
-                "uri" to
-                        destinationUri.toString(),
-                "name" to
-                        fileName
+                "uri" to destinationUri.toString(),
+                "name" to fileName,
+                "contentHash" to contentHash,
+                "sizeBytes" to sizeBytes
             )
 
         } catch (e: Exception) {

@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/saved_folder_picker.dart';
+import '../services/rewards_api_service.dart';
 
 class StatusView extends StatefulWidget {
   final String filePath;
@@ -13,6 +14,7 @@ class StatusView extends StatefulWidget {
   final bool isVideo;
   final bool isSavedItem;
   final VoidCallback? onSaved;
+  final String source;
 
   const StatusView({
     super.key,
@@ -21,6 +23,7 @@ class StatusView extends StatefulWidget {
     required this.isVideo,
     this.isSavedItem = false,
     this.onSaved,
+    required this.source,
   });
 
   @override
@@ -56,6 +59,44 @@ class _StatusViewState extends State<StatusView> {
     }
   }
 
+
+
+  Future<void> _recordSavedStatus(Map<String, dynamic> data) async {
+    // Saved-library items must not count as new saves.
+    if (widget.isSavedItem) return;
+
+    final contentHash = data['contentHash']?.toString();
+    final rawSize = data['sizeBytes'];
+    final sizeBytes = rawSize is num ? rawSize.toInt() : 0;
+
+    if (contentHash == null ||
+        !RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(contentHash) ||
+        sizeBytes <= 0 ||
+        sizeBytes > 2147483647) {
+      debugPrint('Statusly rewards: Invalid save metadata; tracking skipped.');
+      return;
+    }
+
+    if (widget.source != 'whatsapp' && widget.source != 'business') {
+      debugPrint('Statusly rewards: Invalid source; tracking skipped.');
+      return;
+    }
+
+    try {
+      final result = await RewardsApiService().recordSave(
+        contentHash: contentHash,
+        mediaType: widget.isVideo ? 'videos' : 'images',
+        source: widget.source,
+        sizeBytes: sizeBytes,
+      );
+
+      debugPrint('Statusly rewards save response: $result');
+    } catch (error) {
+      // A rewards API failure must never undo or interrupt a gallery save.
+      debugPrint('Statusly rewards tracking failed: $error');
+    }
+  }
+
   // ==========================================================================
   // DOWNLOAD / SAVE
   // ==========================================================================
@@ -74,13 +115,17 @@ class _StatusViewState extends State<StatusView> {
         'mimeType': widget.status['mimeType'],
       });
 
-      if (!mounted) return;
-
-      final l10n = AppLocalizations.of(context)!;
-
       final data = result is Map
           ? Map<String, dynamic>.from(result)
           : <String, dynamic>{};
+
+      // Send reward tracking independently of the gallery-save result.
+      // This also runs when Android reports alreadySaved: true.
+      _recordSavedStatus(data);
+
+      if (!mounted) return;
+
+      final l10n = AppLocalizations.of(context)!;
 
       final alreadySaved = data['alreadySaved'] == true;
 

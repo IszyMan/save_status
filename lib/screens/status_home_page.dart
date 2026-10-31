@@ -621,6 +621,7 @@ class _StatusHomePageState extends State<StatusHomePage> {
             status: status,
             isVideo: _isVideo(status),
             isSavedItem: isSavedItem,
+            source: source,
             onSaved: () {
               _markStatusDownloaded(status);
             },

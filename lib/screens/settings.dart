@@ -9,6 +9,7 @@ import 'how_to_use.dart';
 import 'language_selection_screen.dart';
 import 'privacy_policy.dart';
 import 'terms_conditions.dart';
+import 'rewards_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final StatusService statusService;
@@ -219,6 +220,65 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _openLanguageSelection(
               context,
             ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+
+        // ====================================================================
+        // REWARDS
+        // ====================================================================
+
+        Card(
+          child: ListTile(
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF7B2FF7),
+                    Color(0xFFF107A3),
+                    Color(0xFFFFB800),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7B2FF7).withValues(alpha: 0.22),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.card_giftcard_rounded,
+                color: Colors.white,
+                size: 27,
+              ),
+            ),
+            title: const Text(
+              'Rewards',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            subtitle: const Text(
+              'Complete tasks and earn free gifts',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const RewardsScreen(),
+                ),
+              );
+            },
           ),
         ),
 
